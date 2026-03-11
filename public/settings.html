@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paramètres - Gestion des Présences</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#FF9800">
+</head>
+
+<body>
+  <div class="container page-container">
+    <a href="index.html" class="back-link">← Retour à l'accueil</a>
+    <header class="page-title">
+      <h1>⚙️ Paramètres</h1>
+      <p>Configurez votre intégration Google Forms et Google Sheets</p>
+    </header>
+
+    <main>
+      <div class="section">
+        <h2>Configuration du formulaire Google Forms</h2>
+        <p>Pour que l'application fonctionne, vous devez créer un formulaire Google Forms et indiquer ci‑dessous son URL
+          de base ainsi que les IDs des champs. <a href="docs/google-setup.md" target="_blank">Guide détaillé</a>.</p>
+
+        <form id="settingsForm">
+          <div class="form-group">
+            <label for="baseUrl">URL de base du formulaire</label>
+            <input type="url" id="baseUrl" placeholder="https://docs.google.com/forms/d/e/XXXXXXXXXXXXXXX/viewform"
+              required>
+            <small>L'URL complète de votre formulaire (sans les paramètres).</small>
+          </div>
+
+          <h3>IDs des champs (entry.xxxxxxx)</h3>
+          <div class="form-group">
+            <label for="fieldCourse">Matière</label>
+            <input type="text" id="fieldCourse" placeholder="entry.1234567890" required>
+          </div>
+          <div class="form-group">
+            <label for="fieldTeacher">Enseignant</label>
+            <input type="text" id="fieldTeacher" placeholder="entry.9876543210" required>
+          </div>
+          <div class="form-group">
+            <label for="fieldDate">Date</label>
+            <input type="text" id="fieldDate" placeholder="entry.5555555555" required>
+          </div>
+          <div class="form-group">
+            <label for="fieldTime">Heure</label>
+            <input type="text" id="fieldTime" placeholder="entry.4444444444" required>
+          </div>
+          <div class="form-group">
+            <label for="fieldSession">ID de session</label>
+            <input type="text" id="fieldSession" placeholder="entry.3333333333" required>
+          </div>
+          <div class="form-group">
+            <label for="fieldStudentName">Nom de l'étudiant</label>
+            <input type="text" id="fieldStudentName" placeholder="entry.2222222222" required>
+          </div>
+          <div class="form-group">
+            <label for="fieldStudentFirstName">Prénom de l'étudiant</label>
+            <input type="text" id="fieldStudentFirstName" placeholder="entry.1111111111" required>
+          </div>
+          <div class="form-group">
+            <label for="fieldStudentId">Numéro d'étudiant</label>
+            <input type="text" id="fieldStudentId" placeholder="entry.6666666666" required>
+          </div>
+
+          <div class="button-group">
+            <button type="submit" class="btn btn-primary">Enregistrer la configuration</button>
+            <button type="button" id="resetBtn" class="btn btn-secondary">Restaurer les valeurs par défaut</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="section">
+        <h2>Compte Google administrateur</h2>
+        <p>Les données seront stockées dans le Google Sheets lié à votre formulaire. Assurez‑vous que le formulaire a
+          été créé avec le compte Google que vous souhaitez utiliser comme administrateur.</p>
+        <p><strong>Note :</strong> L'application ne stocke pas vos identifiants Google. Seul le formulaire Google Forms
+          est utilisé pour collecter les soumissions.</p>
+        <p>Pour changer de compte administrateur, créez un nouveau formulaire avec le compte souhaité et mettez à jour
+          les paramètres ci‑dessus.</p>
+      </div>
+
+      <div class="section">
+        <h2>Vérification</h2>
+        <p>Une fois la configuration enregistrée, vous pouvez tester la génération d'un QR code dans l'<a
+            href="teacher.html">interface enseignant</a>.</p>
+        <button id="testBtn" class="btn btn-secondary">Tester la génération d'URL</button>
+        <div id="testOutput" class="hidden"
+          style="margin-top: 20px; padding: 15px; background: #f1f8e9; border-radius: 8px;">
+          <p><strong>URL générée :</strong> <span id="generatedUrl"></span></p>
+          <p><strong>QR code :</strong></p>
+          <div id="testQr"></div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>© 2026 - Solution de gestion des présences | <a href="index.html">Accueil</a></p>
+    </footer>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="js/settings.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enseignant - Gestion des Présences</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4CAF50">
+</head>
+
+<body>
+  <div class="container page-container">
+    <a href="index.html" class="back-link">← Retour à l'accueil</a>
+    <header class="page-title">
+      <h1>👨‍🏫 Interface Enseignant</h1>
+      <p>Générez un QR code pour votre séance de cours</p>
+    </header>
+
+    <main>
+      <div class="section">
+        <h2>Créer une nouvelle séance</h2>
+        <form id="sessionForm">
+          <div class="form-group">
+            <label for="course">Matière / Cours</label>
+            <input type="text" id="course" placeholder="Ex: Mathématiques Avancées" required>
+          </div>
+          <div class="form-group">
+            <label for="teacher">Nom de l'enseignant</label>
+            <input type="text" id="teacher" placeholder="Votre nom" required>
+          </div>
+          <div class="form-group">
+            <label for="date">Date de la séance</label>
+            <input type="date" id="date" required>
+          </div>
+          <div class="form-group">
+            <label for="time">Heure de début</label>
+            <input type="time" id="time" required>
+          </div>
+          <div class="button-group">
+            <button type="submit" class="btn btn-primary">Générer le QR code</button>
+            <button type="button" id="resetBtn" class="btn btn-secondary">Réinitialiser</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="section hidden" id="qrSection">
+        <h2>QR Code de présence</h2>
+        <p>Montrez ce QR code aux étudiants présents. Ils doivent le scanner avec leur téléphone.</p>
+        <div class="qr-container">
+          <div id="qrcode"></div>
+        </div>
+        <div class="form-group">
+          <label for="qrUrl">URL du formulaire de présence :</label>
+          <input type="text" id="qrUrl" readonly>
+          <button type="button" id="copyBtn" class="btn btn-secondary">Copier l'URL</button>
+        </div>
+        <p class="info"><strong>Instructions :</strong> Le QR code contient un lien vers un formulaire Google Forms
+          pré-rempli avec les informations de la séance. Chaque étudiant qui scanne sera redirigé vers ce formulaire
+          pour soumettre sa présence.</p>
+        <div class="button-group">
+          <button type="button" id="downloadBtn" class="btn btn-primary">Télécharger le QR code</button>
+          <button type="button" id="newSessionBtn" class="btn btn-secondary">Nouvelle séance</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Comment utiliser ?</h2>
+        <ol>
+          <li>Remplissez les détails de la séance ci-dessus.</li>
+          <li>Cliquez sur "Générer le QR code". Un QR code unique sera créé.</li>
+          <li>Montrez le QR code aux étudiants (affichage projeté, téléphone, ou impression).</li>
+          <li>Les étudiants scannent le code avec leur appareil photo.</li>
+          <li>Ils seront dirigés vers un formulaire Google Forms pour confirmer leur présence.</li>
+          <li>Les données seront automatiquement enregistrées dans un Google Sheets.</li>
+        </ol>
+        <p><strong>Conseil :</strong> Vous pouvez aussi partager l'URL directement avec les étudiants (via Google
+          Classroom, email, etc.).</p>
+      </div>
+    </main>
+
+    <footer>
+      <p>© 2026 - Solution de gestion des présences | <a href="index.html">Accueil</a></p>
+    </footer>
+  </div>
+
+  <script src="js/teacher.js"></script>
+</body>
+
+</html>

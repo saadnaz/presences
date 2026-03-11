@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Étudiant - Gestion des Présences</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2196F3">
+</head>
+
+<body>
+  <div class="container page-container">
+    <a href="index.html" class="back-link">← Retour à l'accueil</a>
+    <header class="page-title">
+      <h1>🎓 Interface Étudiant</h1>
+      <p>Scannez le QR code de présence fourni par votre enseignant</p>
+    </header>
+
+    <main>
+      <div class="section">
+        <h2>Scanner le QR code</h2>
+        <p>Autorisez l'accès à votre caméra et pointez‑la vers le QR code affiché par l'enseignant.</p>
+        <div class="scanner-container">
+          <video id="video" autoplay playsinline></video>
+          <canvas id="canvas" width="640" height="480"></canvas>
+        </div>
+        <div class="button-group">
+          <button id="startBtn" class="btn btn-primary">Démarrer le scanner</button>
+          <button id="stopBtn" class="btn btn-danger" disabled>Arrêter le scanner</button>
+          <button id="uploadBtn" class="btn btn-secondary">Télécharger une image</button>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+      </div>
+
+      <div class="section hidden" id="resultSection">
+        <h2>Résultat du scan</h2>
+        <div class="scan-result">
+          <p id="scanMessage">Scan en cours...</p>
+          <div id="scanDetails" class="hidden">
+            <p><strong>Session détectée :</strong> <span id="sessionCourse"></span></p>
+            <p><strong>Enseignant :</strong> <span id="sessionTeacher"></span></p>
+            <p><strong>Date :</strong> <span id="sessionDate"></span></p>
+            <p><strong>Heure :</strong> <span id="sessionTime"></span></p>
+            <p><strong>URL du formulaire :</strong> <a id="formLink" target="_blank">Ouvrir le formulaire</a></p>
+          </div>
+        </div>
+        <div class="button-group">
+          <button id="openFormBtn" class="btn btn-primary">Remplir le formulaire de présence</button>
+          <button id="rescanBtn" class="btn btn-secondary">Scanner un autre QR code</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Instructions</h2>
+        <ol>
+          <li>Cliquez sur "Démarrer le scanner" pour activer votre caméra.</li>
+          <li>Positionnez le QR code dans le cadre de la caméra.</li>
+          <li>Le scan est automatique. Une fois détecté, les détails de la séance s'afficheront.</li>
+          <li>Cliquez sur "Remplir le formulaire de présence" pour ouvrir le formulaire Google Forms pré‑rempli.</li>
+          <li>Remplissez vos informations (nom, prénom, numéro d'étudiant) et soumettez.</li>
+          <li>Votre présence sera enregistrée dans Google Sheets.</li>
+        </ol>
+        <p><strong>Alternative :</strong> Si vous avez déjà une image du QR code, utilisez "Télécharger une image".</p>
+        <p><strong>Note :</strong> Vous devez être connecté à votre compte Google (Gmail) pour soumettre le formulaire.
+        </p>
+      </div>
+    </main>
+
+    <footer>
+      <p>© 2026 - Solution de gestion des présences | <a href="index.html">Accueil</a></p>
+    </footer>
+  </div>
+
+  <script src="js/student.js"></script>
+</body>
+
+</html>

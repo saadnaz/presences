@@ -1,0 +1,27 @@
+{
+  "name": "presence-management",
+  "version": "1.0.0",
+  "description": "Application de gestion des présences étudiants via QR code",
+  "main": "public/index.html",
+  "scripts": {
+    "start": "serve public -l 3000",
+    "dev": "serve public -l 3000",
+    "test": "echo \"No tests specified\" && exit 0",
+    "build": "echo \"No build step required\""
+  },
+  "keywords": [
+    "presence",
+    "qr-code",
+    "pwa",
+    "google-forms",
+    "education"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.0.0"
+  },
+  "dependencies": {
+    "qrcode-generator": "^2.0.4"
+  }
+}

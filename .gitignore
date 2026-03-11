@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environnement
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Système
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Éditeurs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Build / Dist
+dist/
+build/
+public/build/  # si vous générez des assets compilés
+*.tmp
+
+# Logs
+logs/
+*.log
+
+# Fichiers temporaires / de test générés pendant le débogage
+calculate.js
+test-qr-capacity.js
+sw_new.js
+
+# Service Worker cache
+service-worker.js
+
+# OS
+ehthumbs.db
+Desktop.ini
+
+# Paquets
+*.tgz
+
+# Coverage
+coverage/
+.nyc_output
+
+# TypeScript
+*.tsbuildinfo
