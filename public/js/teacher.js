@@ -40,13 +40,18 @@ document.addEventListener('DOMContentLoaded', function () {
       baseFormUrl += '?usp=pp_url';
     }
     // Paramètres pré-remplis
-    const params = new URLSearchParams({
-      [settings.fieldCourse]: sessionData.course,
-      [settings.fieldTeacher]: sessionData.teacher,
-      [settings.fieldDate]: sessionData.date,
-      [settings.fieldTime]: sessionData.time,
-      [settings.fieldSession]: sessionData.sessionId
-    });
+    const params = new URLSearchParams();
+    params.append(settings.fieldCourse, sessionData.course);
+    params.append(settings.fieldTeacher, sessionData.teacher);
+    params.append(settings.fieldDate, sessionData.date);
+    params.append(settings.fieldTime, sessionData.time);
+    params.append(settings.fieldSession, sessionData.sessionId);
+    // Paramètres supplémentaires pour l'affichage étudiant
+    params.append('course', sessionData.course);
+    params.append('teacher', sessionData.teacher);
+    params.append('date', sessionData.date);
+    params.append('time', sessionData.time);
+    params.append('sessionId', sessionData.sessionId);
     return `${baseFormUrl}&${params.toString()}`;
   }
 

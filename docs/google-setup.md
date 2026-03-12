@@ -1,3 +1,5 @@
+https://docs.google.com/forms/d/e/1FAIpQLSfbuHLHfs8TuTrrjhssx30IOa56LGGoV6HUUmJBhAs-s75z0w/viewform?usp=publish-editor
+
 # Intégration Google Forms & Google Sheets
 
 Cette documentation explique comment connecter l'application de gestion des présences à Google Forms et Google Sheets pour enregistrer automatiquement les présences des étudiants.

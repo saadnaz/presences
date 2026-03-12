@@ -2,6 +2,16 @@
   publish = "public"
 
 [[redirects]]
+  from = "/teacher"
+  to = "/teacher.html"
+  status = 200
+
+[[redirects]]
+  from = "/student"
+  to = "/student.html"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
