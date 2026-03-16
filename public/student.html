@@ -43,10 +43,12 @@
             <label style="font-weight:bold; color:#555; display:block; margin-bottom:8px;">
               📁 Ou importez une image du QR code :
             </label>
-            <button id="uploadBtn" class="btn btn-secondary" style="font-size:0.9rem;">
+            <label for="fileInput" class="btn btn-secondary"
+              style="font-size:0.9rem; cursor:pointer; display:inline-block;">
               Choisir une image
-            </button>
-            <input type="file" id="fileInput" accept="image/*" style="display:none;">
+            </label>
+            <input type="file" id="fileInput" accept="image/*"
+              style="position:absolute; opacity:0; width:0.1px; height:0.1px; overflow:hidden;">
           </div>
         </div>
 

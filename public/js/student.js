@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const ctx          = canvas.getContext('2d');
     const startBtn     = document.getElementById('startBtn');
     const stopBtn      = document.getElementById('stopBtn');
-    const uploadBtn    = document.getElementById('uploadBtn');
     const fileInput    = document.getElementById('fileInput');
     const resultSection = document.getElementById('scanResultSection');
     const scanMessage  = document.getElementById('scanMessage');
@@ -105,26 +104,37 @@ document.addEventListener('DOMContentLoaded', function () {
     function handleImageFile(file) {
       const img    = new Image();
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = ev => {
         img.onload = () => {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          // Décoder à la résolution naturelle de l'image.
+          // Ne pas forcer 300×300 : si le QR est dans une grande image
+          // (screenshot, photo), il deviendrait illisible pour jsQR.
+          canvas.width  = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          ctx.drawImage(img, 0, 0);
+
           const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const code    = jsQR(imgData.data, imgData.width, imgData.height);
+          const code    = jsQR(imgData.data, imgData.width, imgData.height, {
+            inversionAttempts: 'attemptBoth'   // tente aussi les QR sombres sur fond clair
+          });
+
           if (code) {
+            console.log('[QR] Décodé :', code.data.substring(0, 80) + '…');
             handleScannedUrl(code.data);
           } else {
-            showScanError('Aucun QR code trouvé dans cette image.');
+            console.warn('[QR] Échec de décodage — résolution:', canvas.width, '×', canvas.height);
+            showScanError('Aucun QR code trouvé dans cette image. Essayez avec une image plus nette ou un meilleur cadrage.');
             resultSection.classList.remove('hidden');
           }
         };
-        img.src = e.target.result;
+        img.src = ev.target.result;
       };
       reader.readAsDataURL(file);
     }
 
     startBtn.addEventListener('click', startCamera);
     stopBtn.addEventListener('click', stopCamera);
-    uploadBtn.addEventListener('click', () => fileInput.click());
+    // Le <label for="fileInput"> dans le HTML déclenche le picker nativement
     fileInput.addEventListener('change', e => {
       if (e.target.files.length > 0) handleImageFile(e.target.files[0]);
     });
@@ -177,16 +187,16 @@ document.addEventListener('DOMContentLoaded', function () {
       showAttendanceStatus('Enregistrement de votre présence…', 'info');
 
       // Construire les champs à soumettre au Google Form
-      const e = session.e; // entry IDs
+      const entryIds = session.e;
       const fields = {};
-      if (e.c  && session.c)  fields[e.c]  = session.c;
-      if (e.t  && session.t)  fields[e.t]  = session.t;
-      if (e.d  && session.d)  fields[e.d]  = session.d;
-      if (e.tm && session.tm) fields[e.tm] = session.tm;
-      if (e.s  && session.s)  fields[e.s]  = session.s;
-      if (e.n)  fields[e.n]  = lastName;
-      if (e.fn) fields[e.fn] = firstName;
-      if (e.id) fields[e.id] = studentId;
+      if (entryIds.c  && session.c)  fields[entryIds.c]  = session.c;
+      if (entryIds.t  && session.t)  fields[entryIds.t]  = session.t;
+      if (entryIds.d  && session.d)  fields[entryIds.d]  = session.d;
+      if (entryIds.tm && session.tm) fields[entryIds.tm] = session.tm;
+      if (entryIds.s  && session.s)  fields[entryIds.s]  = session.s;
+      if (entryIds.n)  fields[entryIds.n]  = lastName;
+      if (entryIds.fn) fields[entryIds.fn] = firstName;
+      if (entryIds.id) fields[entryIds.id] = studentId;
 
       ProfileManager.submitToGoogleForms(session.f, fields)
         .then(() => {
