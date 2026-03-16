@@ -22,6 +22,20 @@
     <main>
       <div class="section">
         <h2>Créer une nouvelle séance</h2>
+        <div class="profile-selector-section"
+          style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+          <h3>Profil enseignant</h3>
+          <p>Les paramètres de génération (URL de base, IDs des champs) dépendent du profil sélectionné.</p>
+          <div class="form-group">
+            <label for="profileSelectTeacher">Profil actuel :</label>
+            <select id="profileSelectTeacher" class="form-control">
+              <option value="">Chargement...</option>
+            </select>
+            <div style="margin-top: 10px;">
+              <a href="settings.html" class="btn btn-secondary">Gérer les profils</a>
+            </div>
+          </div>
+        </div>
         <form id="sessionForm">
           <div class="form-group">
             <label for="course">Matière / Cours</label>
@@ -86,6 +100,7 @@
     </footer>
   </div>
 
+  <script src="js/common.js"></script>
   <script src="js/teacher.js"></script>
 </body>
 

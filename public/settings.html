@@ -24,6 +24,22 @@
         <p>Pour que l'application fonctionne, vous devez créer un formulaire Google Forms et indiquer ci‑dessous son URL
           de base ainsi que les IDs des champs. <a href="docs/google-setup.md" target="_blank">Guide détaillé</a>.</p>
 
+        <div class="profile-selector-section"
+          style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+          <h3>Profil enseignant</h3>
+          <p>Choisissez un profil pour gérer ses paramètres spécifiques.</p>
+          <div class="form-group">
+            <label for="profileSelect">Profil actuel :</label>
+            <select id="profileSelect" class="form-control">
+              <option value="">Chargement...</option>
+            </select>
+            <div style="margin-top: 10px;">
+              <button id="newProfileBtn" class="btn btn-secondary">Créer un nouveau profil</button>
+              <button id="deleteProfileBtn" class="btn btn-danger" disabled>Supprimer ce profil</button>
+            </div>
+          </div>
+        </div>
+
         <form id="settingsForm">
           <div class="form-group">
             <label for="baseUrl">URL de base du formulaire</label>
@@ -103,6 +119,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="js/common.js"></script>
   <script src="js/settings.js"></script>
 </body>
 

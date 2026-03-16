@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const downloadBtn = document.getElementById('downloadBtn');
   const resetBtn = document.getElementById('resetBtn');
   const newSessionBtn = document.getElementById('newSessionBtn');
+  const profileSelectTeacher = document.getElementById('profileSelectTeacher');
 
   // Initialiser la date et l'heure actuelles
   const now = new Date();
@@ -18,22 +19,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
   let currentQR = null;
   let currentQRUrl = '';
+  let currentProfileId = null;
 
-  // Récupérer les paramètres sauvegardés
+  // Charger les profils et remplir le select
+  function loadProfiles() {
+    const profiles = ProfileManager.getProfiles();
+    profileSelectTeacher.innerHTML = '';
+    if (profiles.length === 0) {
+      profileSelectTeacher.innerHTML = '<option value="">Aucun profil</option>';
+      return;
+    }
+    const currentId = ProfileManager.getCurrentProfileId();
+    profiles.forEach(profile => {
+      const option = document.createElement('option');
+      option.value = profile.id;
+      option.textContent = profile.name + (profile.pin ? ' (avec PIN)' : '');
+      if (profile.id === currentId) option.selected = true;
+      profileSelectTeacher.appendChild(option);
+    });
+    currentProfileId = currentId;
+  }
+
+  // Récupérer les paramètres sauvegardés du profil actuel
   function getStoredSettings() {
-    return {
-      baseUrl: localStorage.getItem('presence_base_url') || 'https://docs.google.com/forms/d/e/1FAIpQLSe.../viewform',
-      fieldCourse: localStorage.getItem('presence_field_course') || 'entry.1234567890',
-      fieldTeacher: localStorage.getItem('presence_field_teacher') || 'entry.9876543210',
-      fieldDate: localStorage.getItem('presence_field_date') || 'entry.5555555555',
-      fieldTime: localStorage.getItem('presence_field_time') || 'entry.4444444444',
-      fieldSession: localStorage.getItem('presence_field_session') || 'entry.3333333333'
-    };
+    if (!currentProfileId) {
+      alert('Veuillez sélectionner un profil enseignant.');
+      return null;
+    }
+    const settings = ProfileManager.getProfileSettings(currentProfileId);
+    if (!settings) {
+      alert('Aucun paramètre trouvé pour ce profil. Configurez-les dans les paramètres.');
+      return null;
+    }
+    return settings;
   }
 
   // Générer l'URL du formulaire Google Forms
   function generateFormUrl(sessionData) {
     const settings = getStoredSettings();
+    if (!settings) return null;
     // Ajouter le paramètre usp=pp_url si absent
     let baseFormUrl = settings.baseUrl.trim();
     if (!baseFormUrl.includes('?')) {
@@ -76,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
         colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.L,
-        version: 10
+        version: 20
       });
       // Stocker l'URL
       currentQRUrl = url;
@@ -159,6 +183,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Générer l'URL du formulaire
     const formUrl = generateFormUrl(sessionData);
+    if (!formUrl) return;
 
     generateQRCode(formUrl);
     qrSection.classList.remove('hidden');
@@ -172,6 +197,20 @@ document.addEventListener('DOMContentLoaded', function () {
   downloadBtn.addEventListener('click', downloadQRCode);
   resetBtn.addEventListener('click', resetForm);
   newSessionBtn.addEventListener('click', newSession);
+
+  // Gestion du sélecteur de profil
+  profileSelectTeacher.addEventListener('change', function () {
+    const selectedId = this.value;
+    if (selectedId) {
+      ProfileManager.setCurrentProfileId(selectedId);
+      currentProfileId = selectedId;
+    } else {
+      currentProfileId = null;
+    }
+  });
+
+  // Initialisation
+  loadProfiles();
 
   // Message d'information sur la configuration Google Forms
   console.log('Note : Pour utiliser réellement Google Forms, vous devez créer un formulaire et mettre à jour les IDs de champs dans generateFormUrl().');
