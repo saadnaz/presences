@@ -91,3 +91,12 @@ window.ProfileManager = {
   saveProfileSettings,
   getCurrentProfileSettings
 };
+
+// Initialisation : créer un profil par défaut si aucun n'existe
+(function initProfiles() {
+  const profiles = getProfiles();
+  if (profiles.length === 0) {
+    const defaultId = createProfile('Principal');
+    setCurrentProfileId(defaultId);
+  }
+})();

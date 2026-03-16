@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const profileSelect = document.getElementById('profileSelect');
   const newProfileBtn = document.getElementById('newProfileBtn');
   const deleteProfileBtn = document.getElementById('deleteProfileBtn');
+  const autoDetectBtn = document.getElementById('autoDetectBtn');
 
   // Valeurs par défaut (pour nouveau profil)
   const DEFAULT_VALUES = {
@@ -172,6 +173,93 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Détecter automatiquement les IDs des champs depuis l'URL du formulaire
+  function detectFieldIds() {
+    const baseUrl = baseUrlInput.value.trim();
+    if (!baseUrl) {
+      alert('Veuillez d\'abord saisir l\'URL de base du formulaire.');
+      return;
+    }
+
+    // Liste de proxys CORS (en cas d'indisponibilité de l'un)
+    const proxyTemplates = [
+      'https://corsproxy.io/?{url}',
+      'https://api.allorigins.win/raw?url={url}',
+      'https://api.codetabs.com/v1/proxy?quest={url}'
+    ];
+
+    autoDetectBtn.disabled = true;
+    autoDetectBtn.textContent = 'Détection en cours...';
+
+    // Fonction récursive pour essayer chaque proxy
+    const tryProxy = (index) => {
+      if (index >= proxyTemplates.length) {
+        alert('Tous les proxys CORS ont échoué. Vérifiez votre connexion ou essayez manuellement.');
+        autoDetectBtn.disabled = false;
+        autoDetectBtn.textContent = 'Auto‑détecter les IDs';
+        return;
+      }
+
+      const proxyUrl = proxyTemplates[index].replace('{url}', encodeURIComponent(baseUrl));
+      console.log(`Essai du proxy ${index}: ${proxyUrl}`);
+
+      fetch(proxyUrl)
+        .then(response => {
+          if (!response.ok) throw new Error(`Proxy ${index} : ${response.status} ${response.statusText}`);
+          return response.text();
+        })
+        .then(html => {
+          console.log('HTML reçu, longueur:', html.length);
+          // Parser le HTML pour extraire les noms des champs entry.
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          // Sélectionner tous les inputs, textarea, select dont le name commence par "entry."
+          const inputs = doc.querySelectorAll('input[name^="entry."], textarea[name^="entry."], select[name^="entry."]');
+          // Extraire les noms et filtrer ceux qui correspondent au motif entry.xxxx
+          const entryIds = Array.from(inputs).map(el => el.name).filter(name => /^entry\.[0-9]+/.test(name));
+
+          if (entryIds.length === 0) {
+            // Aucun champ entry. trouvé, afficher un extrait du HTML pour débogage
+            console.warn('Aucun champ entry. trouvé. Extrait du HTML:', html.substring(0, 1000));
+            alert('Aucun champ "entry." trouvé dans le formulaire. Vérifiez que l\'URL est correcte, que le formulaire est publié et qu\'il contient des champs de type texte. Vous pouvez aussi consulter la console pour plus de détails.');
+            autoDetectBtn.disabled = false;
+            autoDetectBtn.textContent = 'Auto‑détecter les IDs';
+            return;
+          }
+
+          console.log('IDs trouvés:', entryIds);
+          // Remplir les champs avec les IDs trouvés (dans l'ordre d'apparition)
+          // Nous assumons que l'ordre correspond à: course, teacher, date, time, session, studentName, studentFirstName, studentId
+          // Si plus d'IDs que de champs, on ignore les excédents ; si moins, on laisse les autres vides.
+          const fieldOrder = [
+            fieldCourseInput,
+            fieldTeacherInput,
+            fieldDateInput,
+            fieldTimeInput,
+            fieldSessionInput,
+            fieldStudentNameInput,
+            fieldStudentFirstNameInput,
+            fieldStudentIdInput
+          ];
+
+          entryIds.slice(0, fieldOrder.length).forEach((entryId, index) => {
+            fieldOrder[index].value = entryId;
+          });
+
+          alert(`Détection terminée : ${entryIds.length} champ(s) trouvé(s). Les IDs ont été remplis.`);
+          autoDetectBtn.disabled = false;
+          autoDetectBtn.textContent = 'Auto‑détecter les IDs';
+        })
+        .catch(error => {
+          console.error(`Proxy ${index} a échoué:`, error);
+          // Essayer le proxy suivant
+          tryProxy(index + 1);
+        });
+    };
+
+    tryProxy(0);
+  }
+
   // Créer un nouveau profil
   function createNewProfile() {
     const name = prompt('Nom du nouveau profil :');
@@ -220,4 +308,5 @@ document.addEventListener('DOMContentLoaded', function () {
 
   resetBtn.addEventListener('click', resetToDefaults);
   testBtn.addEventListener('click', generateTestUrl);
+  autoDetectBtn.addEventListener('click', detectFieldIds);
 });
