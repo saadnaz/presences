@@ -18,7 +18,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const profileSelect = document.getElementById('profileSelect');
   const newProfileBtn = document.getElementById('newProfileBtn');
   const deleteProfileBtn = document.getElementById('deleteProfileBtn');
-  const autoDetectBtn = document.getElementById('autoDetectBtn');
+  const importIdsBtn = document.getElementById('importIdsBtn');
+  const pasteIdsTextarea = document.getElementById('pasteIds');
 
   // Valeurs par défaut (pour nouveau profil)
   const DEFAULT_VALUES = {
@@ -33,9 +34,24 @@ document.addEventListener('DOMContentLoaded', function () {
     FIELD_STUDENT_ID: 'entry.6666666666'
   };
 
+  // Définition des champs (label + input correspondant)
+  const FIELD_DEFS = [
+    { key: 'course',           label: 'Matière',              input: () => fieldCourseInput },
+    { key: 'teacher',          label: 'Enseignant',           input: () => fieldTeacherInput },
+    { key: 'date',             label: 'Date',                 input: () => fieldDateInput },
+    { key: 'time',             label: 'Heure',                input: () => fieldTimeInput },
+    { key: 'session',          label: 'ID de session',        input: () => fieldSessionInput },
+    { key: 'studentName',      label: 'Nom étudiant',         input: () => fieldStudentNameInput },
+    { key: 'studentFirstName', label: 'Prénom étudiant',      input: () => fieldStudentFirstNameInput },
+    { key: 'studentId',        label: 'N° étudiant',          input: () => fieldStudentIdInput }
+  ];
+
   let currentProfileId = null;
 
-  // Charger la liste des profils et remplir le select
+  // ---------------------------------------------------------------------------
+  // Gestion des profils
+  // ---------------------------------------------------------------------------
+
   function loadProfiles() {
     const profiles = ProfileManager.getProfiles();
     profileSelect.innerHTML = '';
@@ -55,15 +71,12 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDeleteButton();
   }
 
-  // Mettre à jour l'état du bouton Supprimer
   function updateDeleteButton() {
     deleteProfileBtn.disabled = !currentProfileId;
   }
 
-  // Charger les paramètres du profil sélectionné dans le formulaire
   function loadSettings() {
     if (!currentProfileId) {
-      // Aucun profil sélectionné, vider les champs
       resetFormToDefaults();
       return;
     }
@@ -83,7 +96,6 @@ document.addEventListener('DOMContentLoaded', function () {
     fieldStudentIdInput.value = settings.fieldStudentId || DEFAULT_VALUES.FIELD_STUDENT_ID;
   }
 
-  // Réinitialiser le formulaire aux valeurs par défaut
   function resetFormToDefaults() {
     baseUrlInput.value = DEFAULT_VALUES.BASE_URL;
     fieldCourseInput.value = DEFAULT_VALUES.FIELD_COURSE;
@@ -96,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function () {
     fieldStudentIdInput.value = DEFAULT_VALUES.FIELD_STUDENT_ID;
   }
 
-  // Sauvegarder les paramètres du profil actuel
   function saveSettings() {
     if (!currentProfileId) {
       alert('Veuillez sélectionner un profil.');
@@ -117,7 +128,6 @@ document.addEventListener('DOMContentLoaded', function () {
     alert('Configuration enregistrée pour le profil !');
   }
 
-  // Restaurer les valeurs par défaut pour le profil actuel
   function resetToDefaults() {
     if (!currentProfileId) {
       alert('Veuillez sélectionner un profil.');
@@ -130,7 +140,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Générer une URL de test avec les paramètres actuels
+  function createNewProfile() {
+    const name = prompt('Nom du nouveau profil :');
+    if (!name) return;
+    const pin = prompt('Code PIN (optionnel, laissez vide) :', '');
+    const id = ProfileManager.createProfile(name, pin || '');
+    ProfileManager.setCurrentProfileId(id);
+    loadProfiles();
+    loadSettings();
+  }
+
+  function deleteCurrentProfile() {
+    if (!currentProfileId) return;
+    if (confirm('Voulez‑vous vraiment supprimer ce profil ? Tous ses paramètres seront perdus.')) {
+      ProfileManager.deleteProfile(currentProfileId);
+      loadProfiles();
+      loadSettings();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Test / génération URL
+  // ---------------------------------------------------------------------------
+
   function generateTestUrl() {
     if (!currentProfileId) {
       alert('Veuillez sélectionner un profil.');
@@ -138,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     const baseUrl = baseUrlInput.value.trim();
     if (!baseUrl) {
-      alert('Veuillez d\'abord définir l\'URL de base.');
+      alert("Veuillez d'abord définir l'URL de base.");
       return;
     }
     const params = new URLSearchParams({
@@ -152,7 +184,6 @@ document.addEventListener('DOMContentLoaded', function () {
     generatedUrlSpan.textContent = url;
     testOutput.classList.remove('hidden');
 
-    // Générer QR code avec qrcodejs
     testQrDiv.innerHTML = '';
     if (typeof QRCode === 'undefined') {
       alert('Bibliothèque QR code non chargée.');
@@ -173,119 +204,131 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Détecter automatiquement les IDs des champs depuis l'URL du formulaire
-  function detectFieldIds() {
-    const baseUrl = baseUrlInput.value.trim();
-    if (!baseUrl) {
-      alert('Veuillez d\'abord saisir l\'URL de base du formulaire.');
+  // ---------------------------------------------------------------------------
+  // Import des IDs via le bookmarklet (méthode fiable — sans proxy CORS)
+  //
+  // Pourquoi les proxies CORS échouent :
+  //   Google détecte les proxies et renvoie une page vide ou un captcha.
+  //   Le bookmarklet contourne ce problème en s'exécutant directement dans
+  //   le contexte de la page Google Forms ouverte dans le navigateur.
+  //   Il lit window.FB_PUBLIC_LOAD_DATA_ sans restriction CORS.
+  //
+  // Flux :
+  //   1. Enseignant ouvre le formulaire dans son navigateur
+  //   2. Clique sur le favori bookmarklet → prompt avec les IDs
+  //   3. Copie les IDs et les colle dans la textarea
+  //   4. Clique "Importer" → showMappingPanel() s'affiche
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Parse et importe les IDs collés depuis le bookmarklet.
+   * Accepte : virgule, espace, retour à la ligne comme séparateurs.
+   */
+  function importIds() {
+    const raw = pasteIdsTextarea ? pasteIdsTextarea.value.trim() : '';
+    if (!raw) {
+      alert('Veuillez coller les IDs dans le champ texte.');
+      return;
+    }
+    // Extraire tous les tokens au format entry.XXXXXXXXX
+    const matches = raw.match(/entry\.\d+/g);
+    if (!matches || matches.length === 0) {
+      alert(
+        'Aucun ID au format "entry.XXXXXXXXX" trouvé dans le texte collé.\n\n' +
+        'Assurez-vous d\'avoir bien copié le résultat du bookmarklet.\n' +
+        'Exemple attendu : entry.12345678, entry.98765432, …'
+      );
+      return;
+    }
+    // Dédupliquer en conservant l'ordre
+    const seen = new Set();
+    const entryIds = matches.filter(id => !seen.has(id) && seen.add(id));
+    showMappingPanel(entryIds);
+  }
+
+  /**
+   * Affiche le panneau d'assignation des IDs détectés.
+   * Permet à l'enseignant d'associer chaque entry.xxx au bon champ du formulaire.
+   */
+  function showMappingPanel(entryIds) {
+    const panel = document.getElementById('detectPanel');
+    const mappingsDiv = document.getElementById('detectMappings');
+
+    if (!panel || !mappingsDiv) {
+      // Fallback simple : assigner dans l'ordre
+      FIELD_DEFS.forEach((field, i) => {
+        if (entryIds[i]) field.input().value = entryIds[i];
+      });
+      alert(`${entryIds.length} ID(s) détecté(s) et assignés dans l'ordre. Vérifiez les champs.`);
       return;
     }
 
-    // Liste de proxys CORS (en cas d'indisponibilité de l'un)
-    const proxyTemplates = [
-      'https://corsproxy.io/?{url}',
-      'https://api.allorigins.win/raw?url={url}',
-      'https://api.codetabs.com/v1/proxy?quest={url}'
-    ];
+    // Vider le panneau précédent
+    mappingsDiv.innerHTML = '';
 
-    autoDetectBtn.disabled = true;
-    autoDetectBtn.textContent = 'Détection en cours...';
+    FIELD_DEFS.forEach((field, index) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; align-items:center; gap:12px; margin-bottom:10px;';
 
-    // Fonction récursive pour essayer chaque proxy
-    const tryProxy = (index) => {
-      if (index >= proxyTemplates.length) {
-        alert('Tous les proxys CORS ont échoué. Vérifiez votre connexion ou essayez manuellement.');
-        autoDetectBtn.disabled = false;
-        autoDetectBtn.textContent = 'Auto‑détecter les IDs';
-        return;
+      const lbl = document.createElement('label');
+      lbl.textContent = field.label;
+      lbl.style.cssText = 'min-width:160px; font-weight:bold; color:#555;';
+
+      const sel = document.createElement('select');
+      sel.id = 'map_' + field.key;
+      sel.className = 'form-control';
+      sel.style.cssText = 'flex:1; padding:8px 12px; border:1px solid #ccc; border-radius:6px;';
+
+      // Option vide
+      const emptyOpt = document.createElement('option');
+      emptyOpt.value = '';
+      emptyOpt.textContent = '— Ne pas remplir —';
+      sel.appendChild(emptyOpt);
+
+      // Options pour chaque entry trouvé
+      entryIds.forEach((id, i) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = id;
+        // Pré-sélection par défaut dans l'ordre d'apparition
+        if (i === index) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      row.appendChild(lbl);
+      row.appendChild(sel);
+      mappingsDiv.appendChild(row);
+    });
+
+    // Afficher le résumé du nombre d'IDs trouvés
+    const info = document.getElementById('detectInfo');
+    if (info) info.textContent = `✅ ${entryIds.length} champ(s) détecté(s) dans le formulaire.`;
+
+    panel.classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  /**
+   * Applique la configuration depuis le panneau de mapping vers les champs du formulaire.
+   */
+  function applyMapping() {
+    FIELD_DEFS.forEach(field => {
+      const sel = document.getElementById('map_' + field.key);
+      if (sel && sel.value) {
+        field.input().value = sel.value;
       }
-
-      const proxyUrl = proxyTemplates[index].replace('{url}', encodeURIComponent(baseUrl));
-      console.log(`Essai du proxy ${index}: ${proxyUrl}`);
-
-      fetch(proxyUrl)
-        .then(response => {
-          if (!response.ok) throw new Error(`Proxy ${index} : ${response.status} ${response.statusText}`);
-          return response.text();
-        })
-        .then(html => {
-          console.log('HTML reçu, longueur:', html.length);
-          // Parser le HTML pour extraire les noms des champs entry.
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          // Sélectionner tous les inputs, textarea, select dont le name commence par "entry."
-          const inputs = doc.querySelectorAll('input[name^="entry."], textarea[name^="entry."], select[name^="entry."]');
-          // Extraire les noms et filtrer ceux qui correspondent au motif entry.xxxx
-          const entryIds = Array.from(inputs).map(el => el.name).filter(name => /^entry\.[0-9]+/.test(name));
-
-          if (entryIds.length === 0) {
-            // Aucun champ entry. trouvé, afficher un extrait du HTML pour débogage
-            console.warn('Aucun champ entry. trouvé. Extrait du HTML:', html.substring(0, 1000));
-            alert('Aucun champ "entry." trouvé dans le formulaire. Vérifiez que l\'URL est correcte, que le formulaire est publié et qu\'il contient des champs de type texte. Vous pouvez aussi consulter la console pour plus de détails.');
-            autoDetectBtn.disabled = false;
-            autoDetectBtn.textContent = 'Auto‑détecter les IDs';
-            return;
-          }
-
-          console.log('IDs trouvés:', entryIds);
-          // Remplir les champs avec les IDs trouvés (dans l'ordre d'apparition)
-          // Nous assumons que l'ordre correspond à: course, teacher, date, time, session, studentName, studentFirstName, studentId
-          // Si plus d'IDs que de champs, on ignore les excédents ; si moins, on laisse les autres vides.
-          const fieldOrder = [
-            fieldCourseInput,
-            fieldTeacherInput,
-            fieldDateInput,
-            fieldTimeInput,
-            fieldSessionInput,
-            fieldStudentNameInput,
-            fieldStudentFirstNameInput,
-            fieldStudentIdInput
-          ];
-
-          entryIds.slice(0, fieldOrder.length).forEach((entryId, index) => {
-            fieldOrder[index].value = entryId;
-          });
-
-          alert(`Détection terminée : ${entryIds.length} champ(s) trouvé(s). Les IDs ont été remplis.`);
-          autoDetectBtn.disabled = false;
-          autoDetectBtn.textContent = 'Auto‑détecter les IDs';
-        })
-        .catch(error => {
-          console.error(`Proxy ${index} a échoué:`, error);
-          // Essayer le proxy suivant
-          tryProxy(index + 1);
-        });
-    };
-
-    tryProxy(0);
+    });
+    document.getElementById('detectPanel').classList.add('hidden');
+    alert("Configuration appliquée ! N'oubliez pas de cliquer sur «\u00a0Enregistrer la configuration\u00a0».");
   }
 
-  // Créer un nouveau profil
-  function createNewProfile() {
-    const name = prompt('Nom du nouveau profil :');
-    if (!name) return;
-    const pin = prompt('Code PIN (optionnel, laissez vide) :', '');
-    const id = ProfileManager.createProfile(name, pin || '');
-    ProfileManager.setCurrentProfileId(id);
-    loadProfiles();
-    loadSettings();
-  }
+  // ---------------------------------------------------------------------------
+  // Initialisation et événements
+  // ---------------------------------------------------------------------------
 
-  // Supprimer le profil actuel
-  function deleteCurrentProfile() {
-    if (!currentProfileId) return;
-    if (confirm('Voulez‑vous vraiment supprimer ce profil ? Tous ses paramètres seront perdus.')) {
-      ProfileManager.deleteProfile(currentProfileId);
-      loadProfiles();
-      loadSettings();
-    }
-  }
-
-  // Initialisation
   loadProfiles();
   loadSettings();
 
-  // Événements
   profileSelect.addEventListener('change', function () {
     const selectedId = this.value;
     if (selectedId) {
@@ -308,5 +351,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   resetBtn.addEventListener('click', resetToDefaults);
   testBtn.addEventListener('click', generateTestUrl);
-  autoDetectBtn.addEventListener('click', detectFieldIds);
+  if (importIdsBtn) importIdsBtn.addEventListener('click', importIds);
+
+  // Boutons du panneau de mapping
+  const applyMappingBtn = document.getElementById('applyMappingBtn');
+  const cancelMappingBtn = document.getElementById('cancelMappingBtn');
+  if (applyMappingBtn) applyMappingBtn.addEventListener('click', applyMapping);
+  if (cancelMappingBtn) {
+    cancelMappingBtn.addEventListener('click', () => {
+      document.getElementById('detectPanel').classList.add('hidden');
+    });
+  }
 });

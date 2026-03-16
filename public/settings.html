@@ -45,10 +45,55 @@
             <label for="baseUrl">URL de base du formulaire</label>
             <input type="url" id="baseUrl" placeholder="https://docs.google.com/forms/d/e/XXXXXXXXXXXXXXX/viewform"
               required>
-            <button type="button" id="autoDetectBtn" class="btn btn-small" style="margin-top: 5px;">Auto‑détecter les
-              IDs</button>
-            <small>L'URL complète de votre formulaire (sans les paramètres). Cliquez sur le bouton pour extraire
-              automatiquement les IDs des champs.</small>
+              <small>L'URL complète de votre formulaire Google Forms (sans paramètres).</small>
+          </div>
+
+          <!-- ================================================================
+               Section Bookmarklet — méthode fiable pour extraire les entry IDs
+               ================================================================ -->
+          <div style="margin: 0 0 25px; padding: 18px; background: #fff8e1; border: 2px solid #FFC107; border-radius: 10px;">
+            <h4 style="color: #e65100; margin-bottom: 10px;">🔖 Étape 1 — Ajouter le bookmarklet à vos favoris</h4>
+            <p style="margin-bottom: 12px; color: #555; font-size: 0.9rem;">
+              Faites glisser ce bouton dans votre <strong>barre de favoris</strong> du navigateur :
+            </p>
+            <a id="bookmarkletLink"
+              href="javascript:(function(){var d=window.FB_PUBLIC_LOAD_DATA_;if(!d){alert('Erreur\u00a0: ouvrez d\'abord votre formulaire Google Forms dans cet onglet.');return;}var q=d&&d[1]&&d[1][1];var ids=[];if(Array.isArray(q)){q.forEach(function(f){if(Array.isArray(f)&&Array.isArray(f[4])){f[4].forEach(function(s){if(Array.isArray(s)&&typeof s[0]==='number')ids.push('entry.'+s[0]);});}});}if(ids.length){prompt('Copiez ces\u00a0'+ids.length+'\u00a0IDs (Ctrl+A puis Ctrl+C), puis collez-les dans l\'application\u00a0:',ids.join(', '));}else{alert('Aucun champ trouv\u00e9. Assurez-vous d\'avoir ouvert la page du formulaire Google Forms.');}})();"
+              style="display:inline-block; padding:10px 20px; background:#FF9800; color:white; border-radius:8px; font-weight:bold; text-decoration:none; cursor:grab; border:2px dashed #e65100;"
+              title="Faites glisser ce bouton dans la barre de favoris">
+              📋 Extraire les IDs du formulaire
+            </a>
+            <p style="margin-top: 12px; color: #777; font-size: 0.85rem;">
+              <strong>Étape 2</strong> — Ouvrez votre formulaire Google Forms dans un onglet du navigateur.<br>
+              <strong>Étape 3</strong> — Cliquez sur le favori dans votre barre. Une fenêtre avec les IDs apparaît.<br>
+              <strong>Étape 4</strong> — Copiez tous les IDs (Ctrl+A, Ctrl+C) et collez-les ci-dessous.
+            </p>
+          </div>
+
+          <!-- Zone de collage des IDs copiés depuis le bookmarklet -->
+          <div style="margin: 0 0 25px; padding: 18px; background: #e3f2fd; border: 2px solid #2196F3; border-radius: 10px;">
+            <h4 style="color: #1565c0; margin-bottom: 10px;">📥 Étape 4 — Collez les IDs ici</h4>
+            <div class="form-group" style="margin-bottom:10px;">
+              <textarea id="pasteIds" rows="3"
+                style="width:100%; padding:10px; border:1px solid #90caf9; border-radius:6px; font-family:monospace; font-size:0.9rem; resize:vertical;"
+                placeholder="Exemple : entry.12345678, entry.98765432, entry.55554444 …"></textarea>
+            </div>
+            <button type="button" id="importIdsBtn" class="btn btn-secondary">Importer et assigner les IDs →</button>
+          </div>
+
+          <!-- Panneau de mapping affiché après import des IDs -->
+          <div id="detectPanel" class="hidden"
+            style="margin: 0 0 25px; padding: 20px; background: #e8f5e9; border: 2px solid #4CAF50; border-radius: 10px;">
+            <h4 style="color: #2e7d32; margin-bottom: 8px;">🔍 IDs importés — Assignez-les aux champs</h4>
+            <p id="detectInfo" style="margin-bottom: 15px; color: #388e3c; font-weight: bold;"></p>
+            <p style="margin-bottom: 15px; color: #555; font-size: 0.9rem;">
+              Vérifiez les associations ci-dessous. Corrigez les sélections si l'ordre ne correspond pas à votre
+              formulaire, puis cliquez sur <strong>Appliquer</strong>.
+            </p>
+            <div id="detectMappings"></div>
+            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+              <button type="button" id="applyMappingBtn" class="btn btn-primary">✅ Appliquer cette configuration</button>
+              <button type="button" id="cancelMappingBtn" class="btn btn-secondary">Annuler</button>
+            </div>
           </div>
 
           <h3>IDs des champs (entry.xxxxxxx)</h3>
