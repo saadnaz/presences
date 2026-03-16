@@ -4,9 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Étudiant - Gestion des Présences</title>
+  <title>Présence Étudiant — Gestion des Présences</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2196F3">
 </head>
@@ -15,65 +14,121 @@
   <div class="container page-container">
     <a href="index.html" class="back-link">← Retour à l'accueil</a>
     <header class="page-title">
-      <h1>🎓 Interface Étudiant</h1>
-      <p>Scannez le QR code de présence fourni par votre enseignant</p>
+      <h1>🎓 Valider ma présence</h1>
+      <p id="pageSubtitle">Scannez le QR code de votre enseignant</p>
     </header>
 
     <main>
-      <div class="section">
-        <h2>Scanner le QR code</h2>
-        <p>Autorisez l'accès à votre caméra et pointez‑la vers le QR code affiché par l'enseignant.</p>
-        <div class="scanner-container">
-          <video id="video" autoplay playsinline></video>
-          <canvas id="canvas" width="640" height="480"></canvas>
-        </div>
-        <div class="button-group">
-          <button id="startBtn" class="btn btn-primary">Démarrer le scanner</button>
-          <button id="stopBtn" class="btn btn-danger" disabled>Arrêter le scanner</button>
-          <button id="uploadBtn" class="btn btn-secondary">Télécharger une image</button>
-        </div>
-        <input type="file" id="fileInput" accept="image/*" hidden>
-      </div>
 
-      <div class="section hidden" id="resultSection">
-        <h2>Résultat du scan</h2>
-        <div class="scan-result">
-          <p id="scanMessage">Scan en cours...</p>
-          <div id="scanDetails" class="hidden">
-            <p><strong>Session détectée :</strong> <span id="sessionCourse"></span></p>
-            <p><strong>Enseignant :</strong> <span id="sessionTeacher"></span></p>
-            <p><strong>Date :</strong> <span id="sessionDate"></span></p>
-            <p><strong>Heure :</strong> <span id="sessionTime"></span></p>
-            <p><strong>URL du formulaire :</strong> <a id="formLink" target="_blank">Ouvrir le formulaire</a></p>
+      <!-- ============================================================
+           MODE A : SCANNER (affiché quand pas de données dans l'URL)
+           ============================================================ -->
+      <div id="scannerSection">
+
+        <div class="section">
+          <h2>📷 Scanner le QR code</h2>
+          <p>Pointez votre caméra vers le QR code affiché par votre enseignant.</p>
+
+          <div class="scanner-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas" width="300" height="300"></canvas>
+          </div>
+
+          <div class="button-group" style="margin-top:15px;">
+            <button id="startBtn" class="btn btn-primary">▶️ Démarrer la caméra</button>
+            <button id="stopBtn" class="btn btn-secondary" disabled>⏹ Arrêter</button>
+          </div>
+
+          <div style="margin-top:15px; text-align:center;">
+            <label style="font-weight:bold; color:#555; display:block; margin-bottom:8px;">
+              📁 Ou importez une image du QR code :
+            </label>
+            <button id="uploadBtn" class="btn btn-secondary" style="font-size:0.9rem;">
+              Choisir une image
+            </button>
+            <input type="file" id="fileInput" accept="image/*" style="display:none;">
           </div>
         </div>
-        <div class="button-group">
-          <button id="openFormBtn" class="btn btn-primary">Remplir le formulaire de présence</button>
-          <button id="rescanBtn" class="btn btn-secondary">Scanner un autre QR code</button>
+
+        <!-- Résultat du scan (erreur) -->
+        <div class="section hidden" id="scanResultSection">
+          <p id="scanMessage" style="font-size:1rem; font-weight:bold; text-align:center;"></p>
+        </div>
+
+      </div>
+
+      <!-- ============================================================
+           MODE B : FORMULAIRE PRÉSENCE (affiché quand URL contient ?d=)
+           ============================================================ -->
+      <div id="formSection" style="display:none;">
+
+        <!-- Infos de la séance (lecture seule) -->
+        <div class="section" style="background:#f1f8e9; border-left:4px solid #4CAF50;">
+          <h2 style="color:#2e7d32; margin-bottom:15px;">📋 Séance en cours</h2>
+          <div id="sessionInfoGrid"
+            style="display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:12px;">
+          </div>
+        </div>
+
+        <!-- Formulaire infos étudiant -->
+        <div class="section">
+          <h2>✍️ Vos informations</h2>
+          <p style="color:#555; margin-bottom:20px;">
+            Complétez vos informations pour valider votre présence à cette séance.
+          </p>
+
+          <form id="attendanceForm">
+            <div class="form-group">
+              <label for="studentLastName">Nom *</label>
+              <input type="text" id="studentLastName" placeholder="Votre nom de famille" required
+                autocomplete="family-name" autocapitalize="words">
+            </div>
+            <div class="form-group">
+              <label for="studentFirstName">Prénom *</label>
+              <input type="text" id="studentFirstName" placeholder="Votre prénom" required
+                autocomplete="given-name" autocapitalize="words">
+            </div>
+            <div class="form-group">
+              <label for="studentId">Numéro étudiant *</label>
+              <input type="text" id="studentId" placeholder="Ex : E12345678" required
+                autocomplete="off" inputmode="text">
+            </div>
+
+            <div class="button-group">
+              <button type="submit" id="attendanceSubmitBtn" class="btn btn-primary" style="min-width:220px;">
+                ✅ Valider ma présence
+              </button>
+            </div>
+          </form>
+
+          <!-- Statut de la soumission -->
+          <div id="attendanceStatus" style="display:none; margin-top:15px; padding:15px;
+               border-radius:8px; text-align:center;"></div>
         </div>
       </div>
 
-      <div class="section">
-        <h2>Instructions</h2>
-        <ol>
-          <li>Cliquez sur "Démarrer le scanner" pour activer votre caméra.</li>
-          <li>Positionnez le QR code dans le cadre de la caméra.</li>
-          <li>Le scan est automatique. Une fois détecté, les détails de la séance s'afficheront.</li>
-          <li>Cliquez sur "Remplir le formulaire de présence" pour ouvrir le formulaire Google Forms pré‑rempli.</li>
-          <li>Remplissez vos informations (nom, prénom, numéro d'étudiant) et soumettez.</li>
-          <li>Votre présence sera enregistrée dans Google Sheets.</li>
-        </ol>
-        <p><strong>Alternative :</strong> Si vous avez déjà une image du QR code, utilisez "Télécharger une image".</p>
-        <p><strong>Note :</strong> Vous devez être connecté à votre compte Google (Gmail) pour soumettre le formulaire.
-        </p>
+      <!-- ============================================================
+           MODE C : CONFIRMATION FINALE (après soumission réussie)
+           ============================================================ -->
+      <div id="confirmSection" style="display:none;">
+        <div class="section" style="text-align:center; padding:40px 20px;">
+          <div style="font-size:5rem; margin-bottom:15px;">✅</div>
+          <h2 style="color:#2e7d32; margin-bottom:10px;">Présence enregistrée !</h2>
+          <p style="color:#555; margin-bottom:25px;" id="confirmText"></p>
+          <a href="index.html" class="btn btn-secondary">← Retour à l'accueil</a>
+        </div>
       </div>
+
     </main>
 
     <footer>
-      <p>© 2026 - Solution de gestion des présences | <a href="index.html">Accueil</a></p>
+      <p>© 2026 — Solution de gestion des présences | <a href="index.html">Accueil</a></p>
     </footer>
   </div>
 
+  <!-- Bibliothèque de décodage QR (mode scanner uniquement) -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="js/common.js"></script>
   <script src="js/student.js"></script>
 </body>
 

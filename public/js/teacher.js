@@ -1,217 +1,329 @@
 document.addEventListener('DOMContentLoaded', function () {
+
+  // ============================================================
   // Éléments DOM
-  const sessionForm = document.getElementById('sessionForm');
-  const qrSection = document.getElementById('qrSection');
-  const qrcodeDiv = document.getElementById('qrcode');
-  const qrUrlInput = document.getElementById('qrUrl');
-  const copyBtn = document.getElementById('copyBtn');
-  const downloadBtn = document.getElementById('downloadBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const newSessionBtn = document.getElementById('newSessionBtn');
+  // ============================================================
+  const sessionForm          = document.getElementById('sessionForm');
+  const qrSection            = document.getElementById('qrSection');
+  const qrcodeDiv            = document.getElementById('qrcode');
+  const qrUrlInput           = document.getElementById('qrUrl');
+  const copyBtn              = document.getElementById('copyBtn');
+  const downloadBtn          = document.getElementById('downloadBtn');
+  const resetBtn             = document.getElementById('resetBtn');
+  const newSessionBtn        = document.getElementById('newSessionBtn');
   const profileSelectTeacher = document.getElementById('profileSelectTeacher');
+  const submitStatus         = document.getElementById('submitStatus');
+  const sessionSummary       = document.getElementById('sessionSummary');
+  const pinModal             = document.getElementById('pinModal');
+  const pinInput             = document.getElementById('pinInput');
+  const pinSubmitBtn         = document.getElementById('pinSubmitBtn');
+  const pinError             = document.getElementById('pinError');
 
-  // Initialiser la date et l'heure actuelles
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  const time = now.toTimeString().substring(0, 5);
-  document.getElementById('date').value = today;
-  document.getElementById('time').value = time;
-
-  let currentQR = null;
-  let currentQRUrl = '';
   let currentProfileId = null;
+  let currentQRUrl = '';
 
-  // Charger les profils et remplir le select
+  // ============================================================
+  // Initialisation date/heure
+  // ============================================================
+  const now   = new Date();
+  const today = now.toISOString().split('T')[0];
+  const curTime = now.toTimeString().substring(0, 5);
+  document.getElementById('date').value = today;
+  document.getElementById('time').value = curTime;
+
+  // ============================================================
+  // Gestion des profils
+  // ============================================================
   function loadProfiles() {
     const profiles = ProfileManager.getProfiles();
     profileSelectTeacher.innerHTML = '';
     if (profiles.length === 0) {
-      profileSelectTeacher.innerHTML = '<option value="">Aucun profil</option>';
+      profileSelectTeacher.innerHTML = '<option value="">Aucun profil — configurez dans Paramètres</option>';
       return;
     }
     const currentId = ProfileManager.getCurrentProfileId();
     profiles.forEach(profile => {
-      const option = document.createElement('option');
-      option.value = profile.id;
-      option.textContent = profile.name + (profile.pin ? ' (avec PIN)' : '');
-      if (profile.id === currentId) option.selected = true;
-      profileSelectTeacher.appendChild(option);
+      const opt = document.createElement('option');
+      opt.value = profile.id;
+      opt.textContent = profile.name + (profile.pin ? ' 🔐' : '');
+      if (profile.id === currentId) opt.selected = true;
+      profileSelectTeacher.appendChild(opt);
     });
     currentProfileId = currentId;
   }
 
-  // Récupérer les paramètres sauvegardés du profil actuel
-  function getStoredSettings() {
+  function getSettings() {
     if (!currentProfileId) {
-      alert('Veuillez sélectionner un profil enseignant.');
+      alert('Veuillez sélectionner un profil enseignant.\nSi vous n\'en avez pas, créez-en un dans Paramètres.');
       return null;
     }
-    const settings = ProfileManager.getProfileSettings(currentProfileId);
-    if (!settings) {
-      alert('Aucun paramètre trouvé pour ce profil. Configurez-les dans les paramètres.');
+    const s = ProfileManager.getProfileSettings(currentProfileId);
+    if (!s || !s.baseUrl || s.baseUrl.includes('...')) {
+      alert('Le profil n\'est pas encore configuré.\nRendez-vous dans Paramètres pour saisir l\'URL de votre Google Form et les IDs des champs.');
       return null;
     }
-    return settings;
+    return s;
   }
 
-  // Générer l'URL du formulaire Google Forms
-  function generateFormUrl(sessionData) {
-    const settings = getStoredSettings();
-    if (!settings) return null;
-    // Ajouter le paramètre usp=pp_url si absent
-    let baseFormUrl = settings.baseUrl.trim();
-    if (!baseFormUrl.includes('?')) {
-      baseFormUrl += '?usp=pp_url';
+  // ============================================================
+  // Vérification du PIN
+  // ============================================================
+  function checkPinAccess() {
+    if (!currentProfileId) return;
+    const profiles = ProfileManager.getProfiles();
+    const profile  = profiles.find(p => p.id === currentProfileId);
+    if (profile && profile.pin) {
+      pinModal.style.display = 'flex';
+      setTimeout(() => pinInput.focus(), 100);
     }
-    // Paramètres pré-remplis
-    const params = new URLSearchParams();
-    params.append(settings.fieldCourse, sessionData.course);
-    params.append(settings.fieldTeacher, sessionData.teacher);
-    params.append(settings.fieldDate, sessionData.date);
-    params.append(settings.fieldTime, sessionData.time);
-    params.append(settings.fieldSession, sessionData.sessionId);
-    // Paramètres supplémentaires pour l'affichage étudiant
-    params.append('course', sessionData.course);
-    params.append('teacher', sessionData.teacher);
-    params.append('date', sessionData.date);
-    params.append('time', sessionData.time);
-    params.append('sessionId', sessionData.sessionId);
-    return `${baseFormUrl}&${params.toString()}`;
   }
 
-  // Générer un ID de session unique
+  function validatePin() {
+    const entered = pinInput.value;
+    if (ProfileManager.verifyPin(currentProfileId, entered)) {
+      pinModal.style.display = 'none';
+      pinError.style.display = 'none';
+      pinInput.value = '';
+    } else {
+      pinError.style.display = 'block';
+      pinInput.value = '';
+      pinInput.focus();
+    }
+  }
+
+  pinSubmitBtn.addEventListener('click', validatePin);
+  pinInput.addEventListener('keypress', e => { if (e.key === 'Enter') validatePin(); });
+
+  // Lancer la vérification au chargement
+  loadProfiles();
+  checkPinAccess();
+
+  // ============================================================
+  // Changement de profil → vérifier le nouveau PIN
+  // ============================================================
+  profileSelectTeacher.addEventListener('change', function () {
+    currentProfileId = this.value || null;
+    if (currentProfileId) {
+      ProfileManager.setCurrentProfileId(currentProfileId);
+      checkPinAccess();
+    }
+  });
+
+  // ============================================================
+  // Génération d'un ID de séance unique
+  // ============================================================
   function generateSessionId() {
-    return 'SESS_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+    return 'SESS_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8).toUpperCase();
   }
 
-  // Générer le QR code avec qrcodejs
+  // ============================================================
+  // Affichage du statut de soumission
+  // ============================================================
+  function showStatus(msg, type = 'info') {
+    const colors = {
+      info:    { bg: '#d1ecf1', border: '#bee5eb', text: '#0c5460' },
+      success: { bg: '#d4edda', border: '#c3e6cb', text: '#155724' },
+      error:   { bg: '#f8d7da', border: '#f5c6cb', text: '#721c24' }
+    };
+    const c = colors[type] || colors.info;
+    submitStatus.style.cssText =
+      `display:block; background:${c.bg}; border:1px solid ${c.border};
+       color:${c.text}; padding:12px 16px; border-radius:8px; margin-top:15px;`;
+    submitStatus.innerHTML = msg;
+  }
+
+  // ============================================================
+  // Soumission de la séance au Google Forms (enregistrement enseignant)
+  // ============================================================
+  function submitTeacherSession(settings, sessionData) {
+    const responseUrl = ProfileManager.getFormResponseUrl(settings.baseUrl);
+
+    const fields = {
+      [settings.fieldCourse]:  sessionData.course,
+      [settings.fieldTeacher]: sessionData.teacher,
+      [settings.fieldDate]:    sessionData.date,
+      [settings.fieldTime]:    sessionData.time,
+      [settings.fieldSession]: sessionData.sessionId
+      // Champs étudiant laissés vides intentionnellement (ligne de séance)
+    };
+
+    showStatus('⏳ Enregistrement de la séance dans Google Sheets…');
+
+    ProfileManager.submitToGoogleForms(responseUrl, fields)
+      .then(() => {
+        showStatus(
+          '✅ <strong>Séance enregistrée dans Google Sheets.</strong><br>' +
+          '<small>Les étudiants peuvent maintenant scanner le QR code ci-dessous.</small>',
+          'success'
+        );
+      })
+      .catch(err => {
+        console.error('Erreur soumission enseignant:', err);
+        showStatus(
+          '⚠️ <strong>Impossible d\'enregistrer automatiquement</strong> (erreur réseau).<br>' +
+          '<small>Le QR code reste fonctionnel — les présences étudiants seront bien enregistrées.</small>',
+          'error'
+        );
+      });
+  }
+
+  // ============================================================
+  // Construction de l'URL QR pour les étudiants
+  // (pointe vers student.html dans l'app, avec toutes les données encodées)
+  // ============================================================
+  function buildStudentUrl(settings, sessionData) {
+    // URL de base de l'app (adapte selon l'environnement : local, GitHub Pages, etc.)
+    const base = window.location.href.replace('teacher.html', 'student.html').split('?')[0];
+
+    // Données encodées dans l'URL (base64 JSON)
+    const payload = ProfileManager.encodeSessionData({
+      f:  ProfileManager.getFormResponseUrl(settings.baseUrl), // URL /formResponse
+      c:  sessionData.course,
+      t:  sessionData.teacher,
+      d:  sessionData.date,
+      tm: sessionData.time,
+      s:  sessionData.sessionId,
+      e: {                                  // entry IDs des champs
+        c:  settings.fieldCourse,
+        t:  settings.fieldTeacher,
+        d:  settings.fieldDate,
+        tm: settings.fieldTime,
+        s:  settings.fieldSession,
+        n:  settings.fieldStudentName,
+        fn: settings.fieldStudentFirstName,
+        id: settings.fieldStudentId
+      }
+    });
+
+    return `${base}?d=${payload}`;
+  }
+
+  // ============================================================
+  // Génération du QR code
+  // ============================================================
   function generateQRCode(url) {
-    // Effacer le précédent QR code
     qrcodeDiv.innerHTML = '';
     if (typeof QRCode === 'undefined') {
-      alert('Bibliothèque QR code non chargée. Veuillez vérifier votre connexion.');
-      return;
+      alert('Bibliothèque QR code non disponible. Vérifiez votre connexion internet.');
+      return false;
     }
     try {
       new QRCode(qrcodeDiv, {
-        text: url,
-        width: 250,
-        height: 250,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.L,
-        version: 20
+        text:         url,
+        width:        260,
+        height:       260,
+        colorDark:    '#000000',
+        colorLight:   '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+        version:      20
       });
-      // Stocker l'URL
-      currentQRUrl = url;
+      currentQRUrl   = url;
       qrUrlInput.value = url;
-    } catch (error) {
-      console.error(error);
-      alert('Erreur lors de la génération du QR code');
+      return true;
+    } catch (err) {
+      console.error('QR generation error:', err);
+      alert('Erreur lors de la génération du QR code : ' + err.message);
+      return false;
     }
   }
 
-  // Télécharger le QR code en image
-  function downloadQRCode() {
-    if (!currentQRUrl) return;
-    const canvas = qrcodeDiv.querySelector('canvas');
-    if (!canvas) return;
-    const link = document.createElement('a');
-    link.download = `presence_${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+  // ============================================================
+  // Affichage du résumé de la séance
+  // ============================================================
+  function renderSessionSummary(sessionData) {
+    const items = [
+      { icon: '📚', label: 'Cours',       value: sessionData.course },
+      { icon: '👨‍🏫', label: 'Enseignant', value: sessionData.teacher },
+      { icon: '📅', label: 'Date',        value: sessionData.date },
+      { icon: '⏰', label: 'Heure',       value: sessionData.time },
+      { icon: '🔑', label: 'Session ID',  value: sessionData.sessionId }
+    ];
+    sessionSummary.innerHTML = items.map(i =>
+      `<div style="flex:1; min-width:140px; font-size:0.9rem;">
+        <span style="font-weight:bold; color:#555;">${i.icon} ${i.label} :</span><br>
+        <span style="color:#2c3e50;">${i.value}</span>
+      </div>`
+    ).join('');
   }
 
-  // Copier l'URL dans le presse-papier
-  function copyUrlToClipboard() {
-    qrUrlInput.select();
-    qrUrlInput.setSelectionRange(0, 99999); // Pour mobile
-    navigator.clipboard.writeText(qrUrlInput.value)
-      .then(() => {
-        alert('URL copiée dans le presse-papier !');
-      })
-      .catch(err => {
-        console.error('Erreur de copie : ', err);
-        alert('Échec de la copie');
-      });
-  }
-
-  // Réinitialiser le formulaire
-  function resetForm() {
-    sessionForm.reset();
-    document.getElementById('date').value = today;
-    document.getElementById('time').value = time;
-    qrSection.classList.add('hidden');
-    qrcodeDiv.innerHTML = '';
-    currentQRUrl = '';
-  }
-
-  // Nouvelle séance (cacher QR)
-  function newSession() {
-    qrSection.classList.add('hidden');
-    sessionForm.reset();
-    document.getElementById('date').value = today;
-    document.getElementById('time').value = time;
-    qrcodeDiv.innerHTML = '';
-    currentQRUrl = '';
-    // Remonter en haut
-    window.scrollTo(0, 0);
-  }
-
-  // Gestion de la soumission du formulaire
+  // ============================================================
+  // Soumission du formulaire enseignant
+  // ============================================================
   sessionForm.addEventListener('submit', function (e) {
     e.preventDefault();
 
-    const course = document.getElementById('course').value.trim();
-    const teacher = document.getElementById('teacher').value.trim();
-    const date = document.getElementById('date').value;
-    const time = document.getElementById('time').value;
+    const settings = getSettings();
+    if (!settings) return;
+
+    const course    = document.getElementById('course').value.trim();
+    const teacher   = document.getElementById('teacher').value.trim();
+    const date      = document.getElementById('date').value;
+    const time      = document.getElementById('time').value;
 
     if (!course || !teacher || !date || !time) {
-      alert('Veuillez remplir tous les champs.');
+      alert('Veuillez remplir tous les champs obligatoires.');
       return;
     }
 
-    const sessionId = generateSessionId();
     const sessionData = {
       course,
       teacher,
       date,
       time,
-      sessionId
+      sessionId: generateSessionId()
     };
 
-    // Générer l'URL du formulaire
-    const formUrl = generateFormUrl(sessionData);
-    if (!formUrl) return;
+    // 1. Soumettre la séance au Google Forms (enregistrement enseignant)
+    submitTeacherSession(settings, sessionData);
 
-    generateQRCode(formUrl);
+    // 2. Construire l'URL étudiante (pointe vers student.html)
+    const studentUrl = buildStudentUrl(settings, sessionData);
+
+    // 3. Générer le QR code
+    if (!generateQRCode(studentUrl)) return;
+
+    // 4. Afficher le résumé + la section QR
+    renderSessionSummary(sessionData);
     qrSection.classList.remove('hidden');
-
-    // Défiler vers la section QR
     qrSection.scrollIntoView({ behavior: 'smooth' });
   });
 
-  // Événements des boutons
-  copyBtn.addEventListener('click', copyUrlToClipboard);
-  downloadBtn.addEventListener('click', downloadQRCode);
-  resetBtn.addEventListener('click', resetForm);
-  newSessionBtn.addEventListener('click', newSession);
-
-  // Gestion du sélecteur de profil
-  profileSelectTeacher.addEventListener('change', function () {
-    const selectedId = this.value;
-    if (selectedId) {
-      ProfileManager.setCurrentProfileId(selectedId);
-      currentProfileId = selectedId;
-    } else {
-      currentProfileId = null;
-    }
+  // ============================================================
+  // Actions sur les boutons
+  // ============================================================
+  copyBtn.addEventListener('click', () => {
+    if (!currentQRUrl) return;
+    navigator.clipboard.writeText(currentQRUrl)
+      .then(() => alert('Lien copié dans le presse-papiers !'))
+      .catch(() => {
+        qrUrlInput.select();
+        document.execCommand('copy');
+        alert('Lien copié !');
+      });
   });
 
-  // Initialisation
-  loadProfiles();
+  downloadBtn.addEventListener('click', () => {
+    const canvas = qrcodeDiv.querySelector('canvas');
+    if (!canvas) { alert('QR code non disponible.'); return; }
+    const link      = document.createElement('a');
+    link.download   = `presence_${Date.now()}.png`;
+    link.href       = canvas.toDataURL('image/png');
+    link.click();
+  });
 
-  // Message d'information sur la configuration Google Forms
-  console.log('Note : Pour utiliser réellement Google Forms, vous devez créer un formulaire et mettre à jour les IDs de champs dans generateFormUrl().');
+  function resetForm() {
+    sessionForm.reset();
+    document.getElementById('date').value  = today;
+    document.getElementById('time').value  = curTime;
+    qrSection.classList.add('hidden');
+    submitStatus.style.display = 'none';
+    qrcodeDiv.innerHTML = '';
+    currentQRUrl = '';
+  }
+
+  resetBtn.addEventListener('click', resetForm);
+  newSessionBtn.addEventListener('click', () => {
+    resetForm();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 });

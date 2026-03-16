@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enseignant - Gestion des Présences</title>
+  <title>Enseignant — Gestion des Présences</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="manifest" href="manifest.json">
@@ -12,91 +12,141 @@
 </head>
 
 <body>
+
+  <!-- ============================================================
+       MODAL PIN — affiché si le profil actif a un code PIN
+       ============================================================ -->
+  <div id="pinModal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+           background:rgba(0,0,0,0.75); align-items:center; justify-content:center; z-index:9999;">
+    <div style="background:white; border-radius:15px; padding:40px 30px; text-align:center;
+                max-width:340px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="font-size:3rem; margin-bottom:10px;">🔐</div>
+      <h2 style="color:#2c3e50; margin-bottom:8px;">Espace Enseignant</h2>
+      <p style="color:#777; margin-bottom:20px; font-size:0.95rem;">
+        Ce profil est protégé par un code PIN.
+      </p>
+      <input type="password" id="pinInput" placeholder="Entrez votre PIN" maxlength="12"
+        style="width:100%; padding:14px; font-size:1.3rem; text-align:center;
+               border:2px solid #ccc; border-radius:8px; margin-bottom:10px;
+               letter-spacing:0.4em; outline:none;"
+        autocomplete="current-password">
+      <p id="pinError" style="display:none; color:#e53935; margin-bottom:10px; font-size:0.9rem;">
+        ❌ Code PIN incorrect. Réessayez.
+      </p>
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button id="pinSubmitBtn" class="btn btn-primary" style="min-width:130px;">Valider</button>
+        <a href="index.html" class="btn btn-secondary" style="min-width:130px;">← Retour</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       CONTENU PRINCIPAL
+       ============================================================ -->
   <div class="container page-container">
     <a href="index.html" class="back-link">← Retour à l'accueil</a>
     <header class="page-title">
       <h1>👨‍🏫 Interface Enseignant</h1>
-      <p>Générez un QR code pour votre séance de cours</p>
+      <p>Créez une séance et générez le QR code de présence</p>
     </header>
 
     <main>
+      <!-- Sélecteur de profil -->
+      <div class="section" style="background:#f5f5f5; box-shadow:none; border:1px solid #e0e0e0;">
+        <h3 style="margin-bottom:12px;">Profil enseignant</h3>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="profileSelectTeacher">Profil actif :</label>
+          <select id="profileSelectTeacher" class="form-control"></select>
+        </div>
+        <div style="margin-top:10px;">
+          <a href="settings.html" class="btn btn-secondary" style="font-size:0.9rem; padding:8px 16px;">
+            ⚙️ Gérer les profils
+          </a>
+        </div>
+      </div>
+
+      <!-- Formulaire de création de séance -->
       <div class="section">
         <h2>Créer une nouvelle séance</h2>
-        <div class="profile-selector-section"
-          style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
-          <h3>Profil enseignant</h3>
-          <p>Les paramètres de génération (URL de base, IDs des champs) dépendent du profil sélectionné.</p>
-          <div class="form-group">
-            <label for="profileSelectTeacher">Profil actuel :</label>
-            <select id="profileSelectTeacher" class="form-control">
-              <option value="">Chargement...</option>
-            </select>
-            <div style="margin-top: 10px;">
-              <a href="settings.html" class="btn btn-secondary">Gérer les profils</a>
-            </div>
-          </div>
-        </div>
         <form id="sessionForm">
           <div class="form-group">
-            <label for="course">Matière / Cours</label>
-            <input type="text" id="course" placeholder="Ex: Mathématiques Avancées" required>
+            <label for="course">Matière / Cours *</label>
+            <input type="text" id="course" placeholder="Ex : Mathématiques Avancées" required>
           </div>
           <div class="form-group">
-            <label for="teacher">Nom de l'enseignant</label>
-            <input type="text" id="teacher" placeholder="Votre nom" required>
+            <label for="teacher">Nom de l'enseignant *</label>
+            <input type="text" id="teacher" placeholder="Votre nom complet" required>
           </div>
           <div class="form-group">
-            <label for="date">Date de la séance</label>
+            <label for="date">Date de la séance *</label>
             <input type="date" id="date" required>
           </div>
           <div class="form-group">
-            <label for="time">Heure de début</label>
+            <label for="time">Heure de début *</label>
             <input type="time" id="time" required>
           </div>
           <div class="button-group">
-            <button type="submit" class="btn btn-primary">Générer le QR code</button>
+            <button type="submit" class="btn btn-primary">🚀 Créer la séance et générer le QR</button>
             <button type="button" id="resetBtn" class="btn btn-secondary">Réinitialiser</button>
           </div>
         </form>
+
+        <!-- Statut de la soumission au Google Form -->
+        <div id="submitStatus" style="display:none; margin-top:15px; padding:12px 16px;
+             border-radius:8px; font-size:0.95rem;"></div>
       </div>
 
+      <!-- Section QR code (affichée après génération) -->
       <div class="section hidden" id="qrSection">
         <h2>QR Code de présence</h2>
-        <p>Montrez ce QR code aux étudiants présents. Ils doivent le scanner avec leur téléphone.</p>
+        <p>Affichez ce QR code aux étudiants. Ils scannent et remplissent leurs informations dans l'application.</p>
+
+        <!-- Résumé de la séance -->
+        <div id="sessionSummary"
+          style="display:flex; flex-wrap:wrap; gap:10px; margin:15px 0; padding:15px;
+                 background:#f1f8e9; border-radius:10px; border-left:4px solid #4CAF50;">
+        </div>
+
         <div class="qr-container">
           <div id="qrcode"></div>
         </div>
+
         <div class="form-group">
-          <label for="qrUrl">URL du formulaire de présence :</label>
-          <input type="text" id="qrUrl" readonly>
-          <button type="button" id="copyBtn" class="btn btn-secondary">Copier l'URL</button>
+          <label for="qrUrl">Lien direct (à partager si besoin) :</label>
+          <input type="text" id="qrUrl" readonly style="font-size:0.8rem; color:#555;">
+          <button type="button" id="copyBtn" class="btn btn-secondary"
+            style="margin-top:8px; font-size:0.9rem; padding:8px 16px;">📋 Copier le lien</button>
         </div>
-        <p class="info"><strong>Instructions :</strong> Le QR code contient un lien vers un formulaire Google Forms
-          pré-rempli avec les informations de la séance. Chaque étudiant qui scanne sera redirigé vers ce formulaire
-          pour soumettre sa présence.</p>
-        <div class="button-group">
-          <button type="button" id="downloadBtn" class="btn btn-primary">Télécharger le QR code</button>
-          <button type="button" id="newSessionBtn" class="btn btn-secondary">Nouvelle séance</button>
+
+        <p class="info" style="margin-top:15px;">
+          <strong>Comment ça marche :</strong> Les étudiants scannent ce QR avec leur téléphone,
+          arrivent sur la page de présence pré-remplie avec les infos de la séance, et saisissent
+          seulement leur nom et numéro étudiant.
+        </p>
+
+        <div class="button-group" style="margin-top:20px;">
+          <button type="button" id="downloadBtn" class="btn btn-primary">⬇️ Télécharger le QR</button>
+          <button type="button" id="newSessionBtn" class="btn btn-secondary">➕ Nouvelle séance</button>
         </div>
       </div>
 
+      <!-- Instructions -->
       <div class="section">
-        <h2>Comment utiliser ?</h2>
-        <ol>
-          <li>Remplissez les détails de la séance ci-dessus.</li>
-          <li>Cliquez sur "Générer le QR code". Un QR code unique sera créé.</li>
-          <li>Montrez le QR code aux étudiants (affichage projeté, téléphone, ou impression).</li>
-          <li>Les étudiants scannent le code avec leur appareil photo.</li>
-          <li>Ils seront dirigés vers un formulaire Google Forms pour confirmer leur présence.</li>
-          <li>Les données seront automatiquement enregistrées dans un Google Sheets.</li>
+        <h2>Mode d'emploi</h2>
+        <ol style="margin-left:20px; line-height:2;">
+          <li>Remplissez les détails de la séance et cliquez sur <strong>«&nbsp;Créer la séance&nbsp;»</strong>.</li>
+          <li>La séance est automatiquement enregistrée dans Google Sheets.</li>
+          <li>Un QR code unique est généré — affichez-le au vidéoprojecteur ou imprimez-le.</li>
+          <li>Les étudiants scannent le QR avec leur téléphone.</li>
+          <li>Ils saisissent leur nom et numéro étudiant dans l'application (sans aller sur Google Forms).</li>
+          <li>Chaque présence est enregistrée dans Google Sheets en temps réel.</li>
         </ol>
-        <p><strong>Conseil :</strong> Vous pouvez aussi partager l'URL directement avec les étudiants (via Google
-          Classroom, email, etc.).</p>
       </div>
     </main>
 
     <footer>
-      <p>© 2026 - Solution de gestion des présences | <a href="index.html">Accueil</a></p>
+      <p>© 2026 — Solution de gestion des présences | <a href="index.html">Accueil</a></p>
     </footer>
   </div>
 

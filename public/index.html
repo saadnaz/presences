@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestion des Présences - Accueil</title>
+  <title>Gestion des Présences</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4CAF50">
@@ -17,37 +17,69 @@
   <div class="container">
     <header>
       <h1>📋 Gestion des Présences</h1>
-      <p>Solution simple pour enregistrer les présences des étudiants via QR code</p>
+      <p>Enregistrement des présences par QR code, sans application à installer</p>
     </header>
+
     <main>
       <div class="cards">
-        <div class="card">
+
+        <!-- Carte Enseignant -->
+        <div class="card" style="border-top: 4px solid #4CAF50;">
           <h2>👨‍🏫 Enseignant</h2>
-          <p>Générez un QR code pour votre séance de cours. Les étudiants scannent ce code pour enregistrer leur
-            présence.</p>
-          <a href="teacher.html" class="btn">Accéder à l'interface enseignant</a>
+          <p>
+            Créez une séance, la présence est enregistrée automatiquement dans Google Sheets.
+            Générez le QR code que les étudiants scanneront.
+          </p>
+          <p style="font-size:0.85rem; color:#888; margin-bottom:20px;">
+            🔐 Accès protégé par PIN si configuré
+          </p>
+          <a href="teacher.html" class="btn" style="background:#4CAF50;">
+            Créer une séance →
+          </a>
         </div>
-        <div class="card">
+
+        <!-- Carte Étudiant -->
+        <div class="card" style="border-top: 4px solid #2196F3;">
           <h2>🎓 Étudiant</h2>
-          <p>Scannez le QR code affiché par votre enseignant pour valider votre présence.</p>
-          <a href="student.html" class="btn">Accéder à l'interface étudiant</a>
+          <p>
+            Scannez le QR code affiché par votre enseignant, saisissez vos informations
+            et validez votre présence en quelques secondes.
+          </p>
+          <p style="font-size:0.85rem; color:#888; margin-bottom:20px;">
+            ✅ Aucun compte ni application requis
+          </p>
+          <a href="student.html" class="btn" style="background:#2196F3;">
+            Valider ma présence →
+          </a>
         </div>
+
       </div>
+
       <div class="instructions">
         <h3>Comment ça marche ?</h3>
         <ol>
-          <li>L'enseignant crée une séance et génère un QR code unique.</li>
-          <li>Les étudiants présents scannent le QR code avec leur téléphone.</li>
-          <li>Les données de présence sont automatiquement enregistrées dans Google Sheets.</li>
-          <li>L'enseignant peut consulter les présences à tout moment.</li>
+          <li><strong>Enseignant</strong> — Saisissez la matière, la date et l'heure, puis cliquez
+            <em>«&nbsp;Créer la séance&nbsp;»</em>. La séance est enregistrée dans Google Sheets et un
+            QR code unique est généré.</li>
+          <li><strong>Étudiants</strong> — Scannez le QR code avec votre téléphone (ou depuis un lien partagé).</li>
+          <li>Saisissez votre nom, prénom et numéro étudiant dans la page qui s'ouvre.</li>
+          <li>Cliquez <em>«&nbsp;Valider ma présence&nbsp;»</em> — c'est tout. La présence est
+            instantanément enregistrée dans Google Sheets.</li>
         </ol>
-        <p><strong>Technologies utilisées :</strong> PWA, QR Code, Google Forms, Google Sheets.</p>
+        <p><strong>Configuration initiale :</strong>
+          <a href="settings.html">Paramètres ⚙️</a> — saisissez l'URL de votre Google Form
+          et extrayez les IDs des champs avec le bookmarklet fourni.
+        </p>
       </div>
     </main>
+
     <footer>
-      <p>© 2026 - Solution de gestion des présences | <a href="https://github.com" target="_blank">Code source</a></p>
+      <p>© 2026 — Solution de gestion des présences |
+        <a href="settings.html">⚙️ Paramètres</a>
+      </p>
     </footer>
   </div>
+
   <script src="js/app.js"></script>
 </body>
 
