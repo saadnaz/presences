@@ -3,41 +3,53 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   // Détection du mode : formulaire présence (URL ?d=) ou scanner
   // ============================================================
-  const params  = new URLSearchParams(window.location.search);
-  const encoded = params.get('d');
-  const session = encoded ? ProfileManager.decodeSessionData(encoded) : null;
+  var params  = new URLSearchParams(window.location.search);
+  var encoded = params.get('d');
+  var sessionFromUrl = null;
 
-  if (session && session.f && session.e) {
-    // ── MODE B : Formulaire présence ──────────────────────────
-    initAttendanceForm(session);
+  if (encoded) {
+    try {
+      sessionFromUrl = ProfileManager.decodeSessionData(encoded);
+    } catch (e) {
+      console.error('[Student] Erreur décodage session URL:', e);
+    }
+  }
+
+  if (sessionFromUrl && sessionFromUrl.f && sessionFromUrl.e) {
+    // Arrivée via lien direct (ex: caméra + partage du lien)
+    showAttendanceForm(sessionFromUrl);
   } else {
-    // ── MODE A : Scanner QR ───────────────────────────────────
-    initScanner();
+    startScanner();
   }
 
   // ============================================================
-  // MODE A — Scanner QR
+  // MODE A — Scanner / importeur QR
   // ============================================================
-  function initScanner() {
+  function startScanner() {
     document.getElementById('scannerSection').style.display = 'block';
+    document.getElementById('formSection').style.display    = 'none';
+    document.getElementById('confirmSection').style.display = 'none';
 
-    const video        = document.getElementById('video');
-    const canvas       = document.getElementById('canvas');
-    const ctx          = canvas.getContext('2d');
-    const startBtn     = document.getElementById('startBtn');
-    const stopBtn      = document.getElementById('stopBtn');
-    const fileInput    = document.getElementById('fileInput');
-    const resultSection = document.getElementById('scanResultSection');
-    const scanMessage  = document.getElementById('scanMessage');
+    var video      = document.getElementById('video');
+    var canvas     = document.getElementById('canvas');
+    var ctx        = canvas.getContext('2d');
+    var startBtn   = document.getElementById('startBtn');
+    var stopBtn    = document.getElementById('stopBtn');
+    var fileInput  = document.getElementById('fileInput');
+    var resultDiv  = document.getElementById('scanResultSection');
+    var msgDiv     = document.getElementById('scanMessage');
+    var previewBox = document.getElementById('imagePreviewContainer');
+    var previewImg = document.getElementById('imagePreview');
 
-    let stream      = null;
-    let scanning    = false;
-    let scanInterval = null;
-    let lastUrl     = '';
+    var stream       = null;
+    var scanning     = false;
+    var scanInterval = null;
+    var lastUrl      = '';
 
+    // ── Caméra ────────────────────────────────────────────────────
     function startCamera() {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-        .then(s => {
+        .then(function (s) {
           stream = s;
           video.srcObject = stream;
           startBtn.disabled = true;
@@ -45,15 +57,15 @@ document.addEventListener('DOMContentLoaded', function () {
           scanning = true;
           scanInterval = setInterval(scanFrame, 400);
         })
-        .catch(err => {
+        .catch(function (err) {
           console.error(err);
-          showScanError('Impossible d\'accéder à la caméra. Vérifiez les permissions.');
+          showMsg('Impossible d\'accéder à la caméra. Vérifiez les permissions.', 'error');
         });
     }
 
     function stopCamera() {
       if (stream) {
-        stream.getTracks().forEach(t => t.stop());
+        stream.getTracks().forEach(function (t) { t.stop(); });
         video.srcObject = null;
         stream = null;
       }
@@ -66,150 +78,260 @@ document.addEventListener('DOMContentLoaded', function () {
     function scanFrame() {
       if (!scanning || video.readyState !== video.HAVE_ENOUGH_DATA) return;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code    = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
-      if (code) handleScannedUrl(code.data);
+      var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
+      if (code) processQrUrl(code.data);
     }
 
-    function handleScannedUrl(url) {
+    // ── Traitement de l'URL décodée ────────────────────────────────
+    function processQrUrl(url) {
       if (url === lastUrl) return;
       lastUrl = url;
       stopCamera();
 
-      // Essayer de décoder une URL student.html?d=...
+      console.log('[QR] URL :', url.substring(0, 120));
+
+      var dParam = null;
       try {
-        const u       = new URL(url);
-        const dParam  = u.searchParams.get('d');
-        if (dParam) {
-          // Rediriger vers student.html avec le paramètre d= pour afficher le formulaire
-          window.location.href = 'student.html?d=' + encodeURIComponent(dParam);
-          return;
-        }
-        // Ancienne URL direct Google Forms (rétrocompatibilité)
-        if (url.includes('docs.google.com/forms')) {
-          window.open(url, '_blank');
-          showScanError('QR code détecté (ancien format). Ouverture du formulaire Google Forms…');
-          return;
-        }
-      } catch (_) {}
+        var u = new URL(url);
+        dParam = u.searchParams.get('d');
+      } catch (e) {
+        // URL relative ou malformée — essayer en direct
+        var idx = url.indexOf('?d=');
+        if (idx !== -1) dParam = url.substring(idx + 3).split('&')[0];
+      }
 
-      showScanError('QR code scanné mais format non reconnu. Assurez-vous d\'utiliser le bon QR code.');
+      console.log('[QR] dParam :', dParam ? dParam.substring(0, 40) + '...' : 'absent');
+
+      if (dParam) {
+        var sess = null;
+        try {
+          sess = ProfileManager.decodeSessionData(dParam);
+          console.log('[QR] Session décodée :', JSON.stringify(sess).substring(0, 120));
+        } catch (e) {
+          console.error('[QR] Erreur décodage :', e);
+        }
+
+        if (sess && sess.f && sess.e) {
+          // ── TRANSITION IMMÉDIATE vers le formulaire ──────────────
+          // Pas de setTimeout, pas de window.location.href
+          // On cache le scanner et on affiche le formulaire dans la foulée
+          showMsg(
+            '<strong>✅ QR code valide — affichage du formulaire</strong>',
+            'success'
+          );
+          // Délai minimal (1 frame) pour laisser le message s'afficher
+          setTimeout(function () {
+            stopCamera();
+            showAttendanceForm(sess);
+          }, 80);
+
+        } else {
+          var reason = !sess
+            ? 'Le décodage du contenu a échoué (données corrompues).'
+            : !sess.f
+              ? 'URL du formulaire manquante dans le QR code.'
+              : 'Identifiants de champs manquants dans le QR code.';
+          showMsg(
+            '<strong>❌ QR code non valide</strong><br>' + reason +
+            '<br><small>Demandez à votre enseignant de regénérer le QR code depuis les Paramètres.</small>',
+            'error'
+          );
+        }
+        return;
+      }
+
+      // Ancien format Google Forms
+      if (url.indexOf('docs.google.com/forms') !== -1) {
+        showMsg(
+          '<strong>⚠️ Ancien format détecté</strong><br>' +
+          'Ce QR code provient d\'une ancienne version de l\'application.<br>' +
+          'Demandez à votre enseignant de regénérer le QR code.',
+          'warn'
+        );
+        return;
+      }
+
+      showMsg('<strong>❓ QR code non reconnu</strong><br>Utilisez bien le QR code de votre enseignant.', 'error');
     }
 
-    function showScanError(msg) {
-      scanMessage.textContent = msg;
-      resultSection.classList.remove('hidden');
-    }
-
+    // ── Import image QR ───────────────────────────────────────────
     function handleImageFile(file) {
-      const img    = new Image();
-      const reader = new FileReader();
-      reader.onload = ev => {
-        img.onload = () => {
-          // Décoder à la résolution naturelle de l'image.
-          // Ne pas forcer 300×300 : si le QR est dans une grande image
-          // (screenshot, photo), il deviendrait illisible pour jsQR.
+      showMsg('⏳ Analyse de l\'image <strong>' + escHtml(file.name) + '</strong>…', 'info');
+
+      var objUrl = URL.createObjectURL(file);
+      previewImg.src  = objUrl;
+      previewBox.style.display = 'block';
+
+      var img    = new Image();
+      var reader = new FileReader();
+
+      reader.onload = function (ev) {
+        img.onload = function () {
           canvas.width  = img.naturalWidth;
           canvas.height = img.naturalHeight;
           ctx.drawImage(img, 0, 0);
+          console.log('[QR] Image :', canvas.width, 'x', canvas.height);
 
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const code    = jsQR(imgData.data, imgData.width, imgData.height, {
-            inversionAttempts: 'attemptBoth'   // tente aussi les QR sombres sur fond clair
+          var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          var code = jsQR(imgData.data, imgData.width, imgData.height, {
+            inversionAttempts: 'attemptBoth'
           });
+          URL.revokeObjectURL(objUrl);
 
           if (code) {
-            console.log('[QR] Décodé :', code.data.substring(0, 80) + '…');
-            handleScannedUrl(code.data);
+            processQrUrl(code.data);
           } else {
-            console.warn('[QR] Échec de décodage — résolution:', canvas.width, '×', canvas.height);
-            showScanError('Aucun QR code trouvé dans cette image. Essayez avec une image plus nette ou un meilleur cadrage.');
-            resultSection.classList.remove('hidden');
+            showMsg(
+              '<strong>❌ Aucun QR code trouvé</strong><br>' +
+              'Résolution : ' + canvas.width + ' × ' + canvas.height + ' px<br>' +
+              '<small>Utilisez l\'image originale, non recadrée.</small>',
+              'error'
+            );
           }
         };
+        img.onerror = function () {
+          showMsg('<strong>❌ Image illisible</strong>', 'error');
+          URL.revokeObjectURL(objUrl);
+        };
         img.src = ev.target.result;
+      };
+      reader.onerror = function () {
+        showMsg('<strong>❌ Erreur de lecture du fichier</strong>', 'error');
       };
       reader.readAsDataURL(file);
     }
 
+    // ── Message de statut ─────────────────────────────────────────
+    function showMsg(html, type) {
+      var palette = {
+        success: { bg: '#d4edda', bd: '#c3e6cb', tx: '#155724' },
+        info:    { bg: '#d1ecf1', bd: '#bee5eb', tx: '#0c5460' },
+        warn:    { bg: '#fff3cd', bd: '#ffeeba', tx: '#856404' },
+        error:   { bg: '#f8d7da', bd: '#f5c6cb', tx: '#721c24' }
+      };
+      var p = palette[type] || palette.info;
+      msgDiv.innerHTML = html;
+      msgDiv.style.cssText =
+        'padding:14px 16px; border-radius:8px; line-height:1.6;' +
+        'background:' + p.bg + '; border:1px solid ' + p.bd + '; color:' + p.tx + ';';
+      resultDiv.classList.remove('hidden');
+    }
+
+    // ── Listeners ─────────────────────────────────────────────────
     startBtn.addEventListener('click', startCamera);
     stopBtn.addEventListener('click', stopCamera);
-    // Le <label for="fileInput"> dans le HTML déclenche le picker nativement
-    fileInput.addEventListener('change', e => {
-      if (e.target.files.length > 0) handleImageFile(e.target.files[0]);
+    fileInput.addEventListener('change', function (e) {
+      if (e.target.files && e.target.files.length > 0) {
+        handleImageFile(e.target.files[0]);
+        // Reset pour permettre de re-sélectionner le même fichier
+        setTimeout(function () { e.target.value = ''; }, 100);
+      }
     });
   }
 
   // ============================================================
-  // MODE B — Formulaire présence avec données de session
+  // MODE B — Formulaire de présence
+  // Appelé directement (sans rechargement de page) depuis startScanner()
   // ============================================================
-  function initAttendanceForm(session) {
-    // Masquer le scanner, montrer le formulaire
+  function showAttendanceForm(session) {
+    console.log('[Form] Affichage formulaire, session :', JSON.stringify(session).substring(0, 120));
+
+    // Basculer les sections
     document.getElementById('scannerSection').style.display = 'none';
     document.getElementById('formSection').style.display    = 'block';
+    document.getElementById('confirmSection').style.display = 'none';
     document.getElementById('pageSubtitle').textContent     = 'Complétez vos informations';
 
-    // Afficher les infos de la séance (lecture seule)
-    const grid = document.getElementById('sessionInfoGrid');
-    const items = [
-      { icon: '📚', label: 'Cours',      value: session.c  },
-      { icon: '👨‍🏫', label: 'Enseignant', value: session.t  },
-      { icon: '📅', label: 'Date',       value: formatDate(session.d) },
-      { icon: '⏰', label: 'Heure',      value: session.tm }
+    // Scroll vers le haut pour que l'étudiant voie le formulaire
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Bannière de confirmation de séance
+    var grid = document.getElementById('sessionInfoGrid');
+    if (!grid) {
+      console.error('[Form] #sessionInfoGrid introuvable !');
+      return;
+    }
+    var items = [
+      { icon: '📚', label: 'Cours',      val: session.c  },
+      { icon: '👨‍🏫', label: 'Enseignant', val: session.t  },
+      { icon: '📅', label: 'Date',       val: formatDate(session.d) },
+      { icon: '⏰', label: 'Heure',      val: session.tm }
     ];
-    grid.innerHTML = items.map(i =>
-      `<div style="padding:10px 12px; background:white; border-radius:8px;
-                  border:1px solid #c8e6c9;">
-        <div style="font-size:0.8rem; color:#888;">${i.icon} ${i.label}</div>
-        <div style="font-weight:bold; color:#2c3e50; margin-top:3px;">${i.value || '—'}</div>
-      </div>`
-    ).join('');
+    grid.innerHTML = items.map(function (it) {
+      return '<div style="padding:10px 12px;background:white;border-radius:8px;border:1px solid #c8e6c9;">' +
+        '<div style="font-size:0.8rem;color:#888;">' + it.icon + ' ' + it.label + '</div>' +
+        '<div style="font-weight:bold;color:#2c3e50;margin-top:3px;">' + escHtml(it.val || '—') + '</div>' +
+        '</div>';
+    }).join('');
 
-    // Gestion du formulaire étudiant
-    const form            = document.getElementById('attendanceForm');
-    const submitBtn       = document.getElementById('attendanceSubmitBtn');
-    const statusDiv       = document.getElementById('attendanceStatus');
+    // Vider d'éventuels champs préremplis
+    document.getElementById('studentLastName').value  = '';
+    document.getElementById('studentFirstName').value = '';
+    document.getElementById('studentId').value        = '';
 
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
+    // Mettre le focus sur le premier champ
+    setTimeout(function () {
+      document.getElementById('studentLastName').focus();
+    }, 300);
 
-      const lastName  = document.getElementById('studentLastName').value.trim();
-      const firstName = document.getElementById('studentFirstName').value.trim();
-      const studentId = document.getElementById('studentId').value.trim();
+    // Gestion de la soumission
+    var form      = document.getElementById('attendanceForm');
+    var submitBtn = document.getElementById('attendanceSubmitBtn');
+    var statusDiv = document.getElementById('attendanceStatus');
+
+    // Cloner le formulaire pour supprimer les anciens listeners (cas de multi-scan)
+    var newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+    form      = newForm;
+    submitBtn = document.getElementById('attendanceSubmitBtn');
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+
+      var lastName  = document.getElementById('studentLastName').value.trim();
+      var firstName = document.getElementById('studentFirstName').value.trim();
+      var studentId = document.getElementById('studentId').value.trim();
 
       if (!lastName || !firstName || !studentId) {
-        showAttendanceStatus('⚠️ Veuillez remplir tous les champs.', 'error');
+        showStatus(statusDiv, '⚠️ Veuillez remplir tous les champs.', 'error');
         return;
       }
 
-      submitBtn.disabled   = true;
+      submitBtn.disabled    = true;
       submitBtn.textContent = '⏳ Envoi en cours…';
-      showAttendanceStatus('Enregistrement de votre présence…', 'info');
+      showStatus(statusDiv, 'Enregistrement de votre présence…', 'info');
 
-      // Construire les champs à soumettre au Google Form
-      const entryIds = session.e;
-      const fields = {};
-      if (entryIds.c  && session.c)  fields[entryIds.c]  = session.c;
-      if (entryIds.t  && session.t)  fields[entryIds.t]  = session.t;
-      if (entryIds.d  && session.d)  fields[entryIds.d]  = session.d;
-      if (entryIds.tm && session.tm) fields[entryIds.tm] = session.tm;
-      if (entryIds.s  && session.s)  fields[entryIds.s]  = session.s;
-      if (entryIds.n)  fields[entryIds.n]  = lastName;
-      if (entryIds.fn) fields[entryIds.fn] = firstName;
-      if (entryIds.id) fields[entryIds.id] = studentId;
+      // ── Construire les champs du Google Form ────────────────────
+      // Le formulaire Google a deux sections :
+      //   1. Infos séance (cours, enseignant, date, heure, sessionId)  → pré-remplies via session
+      //   2. Infos étudiant (nom, prénom, numéro)                      → saisies ici
+      var e = session.e;   // raccourci vers les entry IDs
+      var fields = {};
+
+      // Section séance (données de l'enseignant transmises via QR)
+      if (e.c  && session.c)  fields[e.c]  = session.c;
+      if (e.t  && session.t)  fields[e.t]  = session.t;
+      if (e.d  && session.d)  fields[e.d]  = session.d;
+      if (e.tm && session.tm) fields[e.tm] = session.tm;
+      if (e.s  && session.s)  fields[e.s]  = session.s;
+
+      // Section étudiant (saisie directe)
+      if (e.n)  fields[e.n]  = lastName;
+      if (e.fn) fields[e.fn] = firstName;
+      if (e.id) fields[e.id] = studentId;
+
+      console.log('[Form] Soumission :', Object.keys(fields).length, 'champ(s)');
 
       ProfileManager.submitToGoogleForms(session.f, fields)
-        .then(() => {
+        .then(function () {
           showConfirmation(session, lastName, firstName, studentId);
         })
-        .catch(err => {
-          console.error('Erreur soumission étudiant:', err);
+        .catch(function (err) {
+          console.error('[Form] Erreur soumission :', err);
           submitBtn.disabled    = false;
           submitBtn.textContent = '✅ Valider ma présence';
-          showAttendanceStatus(
-            '❌ Erreur réseau — vérifiez votre connexion et réessayez.',
-            'error'
-          );
+          showStatus(statusDiv, '❌ Erreur réseau. Vérifiez votre connexion et réessayez.', 'error');
         });
     });
   }
@@ -221,11 +343,13 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('formSection').style.display    = 'none';
     document.getElementById('confirmSection').style.display = 'block';
     document.getElementById('pageSubtitle').textContent     = 'Présence validée';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     document.getElementById('confirmText').innerHTML =
-      `<strong>${firstName} ${lastName}</strong> (${studentId})<br>` +
-      `${session.c} — ${formatDate(session.d)} à ${session.tm}<br>` +
-      `<small style="color:#888;">Enseignant : ${session.t}</small>`;
+      '<strong>' + escHtml(firstName) + ' ' + escHtml(lastName) + '</strong>' +
+      ' (' + escHtml(studentId) + ')<br>' +
+      escHtml(session.c || '') + ' — ' + formatDate(session.d) + ' à ' + escHtml(session.tm || '') + '<br>' +
+      '<small style="color:#888;">Enseignant : ' + escHtml(session.t || '') + '</small>';
   }
 
   // ============================================================
@@ -233,22 +357,26 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   function formatDate(dateStr) {
     if (!dateStr) return '';
-    try {
-      const [y, m, d] = dateStr.split('-');
-      return `${d}/${m}/${y}`;
-    } catch (_) { return dateStr; }
+    var p = dateStr.split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : dateStr;
   }
 
-  function showAttendanceStatus(msg, type) {
-    const statusDiv = document.getElementById('attendanceStatus');
-    const styles = {
-      info:  'background:#d1ecf1; border:1px solid #bee5eb; color:#0c5460;',
-      error: 'background:#f8d7da; border:1px solid #f5c6cb; color:#721c24;',
-      ok:    'background:#d4edda; border:1px solid #c3e6cb; color:#155724;'
+  function escHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function showStatus(el, msg, type) {
+    var s = {
+      info:  'background:#d1ecf1;border:1px solid #bee5eb;color:#0c5460;',
+      error: 'background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;',
+      ok:    'background:#d4edda;border:1px solid #c3e6cb;color:#155724;'
     };
-    statusDiv.style.cssText = `display:block; padding:12px; border-radius:8px;
-      margin-top:15px; ${styles[type] || styles.info}`;
-    statusDiv.innerHTML = msg;
+    el.style.cssText = 'display:block;padding:12px;border-radius:8px;margin-top:15px;' + (s[type] || s.info);
+    el.innerHTML = msg;
   }
 
 });

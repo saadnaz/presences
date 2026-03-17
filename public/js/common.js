@@ -2,9 +2,9 @@
 // ProfileManager — gestion multi-profils avec localStorage
 // ============================================================
 
-const STORAGE_KEY_PROFILES        = 'presence_profiles';
+const STORAGE_KEY_PROFILES = 'presence_profiles';
 const STORAGE_KEY_CURRENT_PROFILE = 'presence_current_profile';
-const STORAGE_PREFIX_SETTINGS     = 'presence_settings_';
+const STORAGE_PREFIX_SETTINGS = 'presence_settings_';
 
 function getProfiles() {
   const data = localStorage.getItem(STORAGE_KEY_PROFILES);
@@ -29,15 +29,15 @@ function createProfile(name, pin = '') {
   profiles.push({ id, name, pin });
   saveProfiles(profiles);
   const defaultSettings = {
-    baseUrl:              'https://docs.google.com/forms/d/e/1FAIpQLSe.../viewform',
-    fieldCourse:          'entry.1234567890',
-    fieldTeacher:         'entry.9876543210',
-    fieldDate:            'entry.5555555555',
-    fieldTime:            'entry.4444444444',
-    fieldSession:         'entry.3333333333',
-    fieldStudentName:     'entry.2222222222',
-    fieldStudentFirstName:'entry.1111111111',
-    fieldStudentId:       'entry.6666666666'
+    baseUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSe.../viewform',
+    fieldCourse: 'entry.1234567890',
+    fieldTeacher: 'entry.9876543210',
+    fieldDate: 'entry.5555555555',
+    fieldTime: 'entry.4444444444',
+    fieldSession: 'entry.3333333333',
+    fieldStudentName: 'entry.2222222222',
+    fieldStudentFirstName: 'entry.1111111111',
+    fieldStudentId: 'entry.6666666666'
   };
   saveProfileSettings(id, defaultSettings);
   return id;
@@ -106,8 +106,8 @@ function submitToGoogleForms(responseUrl, fields) {
     .join('&');
 
   return fetch(responseUrl, {
-    method:  'POST',
-    mode:    'no-cors',
+    method: 'POST',
+    mode: 'no-cors',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body
   });
@@ -133,9 +133,12 @@ function getFormResponseUrl(baseUrl) {
 function encodeSessionData(data) {
   try {
     const json = JSON.stringify(data);
+    console.log('encodeSessionData json:', json);
     // btoa ne supporte pas les caractères non-ASCII → encodeURIComponent d'abord
-    return btoa(unescape(encodeURIComponent(json)))
+    const encoded = btoa(unescape(encodeURIComponent(json)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    console.log('encodeSessionData encoded:', encoded);
+    return encoded;
   } catch (e) {
     console.error('encodeSessionData error:', e);
     return null;
@@ -146,12 +149,16 @@ function encodeSessionData(data) {
  * Décode une chaîne base64-URL-safe en objet JS.
  */
 function decodeSessionData(encoded) {
+  console.log('decodeSessionData encoded:', encoded, 'length:', encoded.length, 'first10:', encoded.substring(0, 10));
   try {
     // Restaurer les caractères base64 standard
     const b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
     // Rajouter le padding si nécessaire
     const padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
-    return JSON.parse(decodeURIComponent(escape(atob(padded))));
+    console.log('b64:', b64, 'padded:', padded);
+    const decoded = JSON.parse(decodeURIComponent(escape(atob(padded))));
+    console.log('decoded session:', decoded);
+    return decoded;
   } catch (e) {
     console.error('decodeSessionData error:', e);
     return null;

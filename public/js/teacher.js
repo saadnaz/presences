@@ -3,21 +3,21 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   // Éléments DOM
   // ============================================================
-  const sessionForm          = document.getElementById('sessionForm');
-  const qrSection            = document.getElementById('qrSection');
-  const qrcodeDiv            = document.getElementById('qrcode');
-  const qrUrlInput           = document.getElementById('qrUrl');
-  const copyBtn              = document.getElementById('copyBtn');
-  const downloadBtn          = document.getElementById('downloadBtn');
-  const resetBtn             = document.getElementById('resetBtn');
-  const newSessionBtn        = document.getElementById('newSessionBtn');
+  const sessionForm = document.getElementById('sessionForm');
+  const qrSection = document.getElementById('qrSection');
+  const qrcodeDiv = document.getElementById('qrcode');
+  const qrUrlInput = document.getElementById('qrUrl');
+  const copyBtn = document.getElementById('copyBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const newSessionBtn = document.getElementById('newSessionBtn');
   const profileSelectTeacher = document.getElementById('profileSelectTeacher');
-  const submitStatus         = document.getElementById('submitStatus');
-  const sessionSummary       = document.getElementById('sessionSummary');
-  const pinModal             = document.getElementById('pinModal');
-  const pinInput             = document.getElementById('pinInput');
-  const pinSubmitBtn         = document.getElementById('pinSubmitBtn');
-  const pinError             = document.getElementById('pinError');
+  const submitStatus = document.getElementById('submitStatus');
+  const sessionSummary = document.getElementById('sessionSummary');
+  const pinModal = document.getElementById('pinModal');
+  const pinInput = document.getElementById('pinInput');
+  const pinSubmitBtn = document.getElementById('pinSubmitBtn');
+  const pinError = document.getElementById('pinError');
 
   let currentProfileId = null;
   let currentQRUrl = '';
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   // Initialisation date/heure
   // ============================================================
-  const now   = new Date();
+  const now = new Date();
   const today = now.toISOString().split('T')[0];
   const curTime = now.toTimeString().substring(0, 5);
   document.getElementById('date').value = today;
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function checkPinAccess() {
     if (!currentProfileId) return;
     const profiles = ProfileManager.getProfiles();
-    const profile  = profiles.find(p => p.id === currentProfileId);
+    const profile = profiles.find(p => p.id === currentProfileId);
     if (profile && profile.pin) {
       pinModal.style.display = 'flex';
       setTimeout(() => pinInput.focus(), 100);
@@ -121,9 +121,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   function showStatus(msg, type = 'info') {
     const colors = {
-      info:    { bg: '#d1ecf1', border: '#bee5eb', text: '#0c5460' },
+      info: { bg: '#d1ecf1', border: '#bee5eb', text: '#0c5460' },
       success: { bg: '#d4edda', border: '#c3e6cb', text: '#155724' },
-      error:   { bg: '#f8d7da', border: '#f5c6cb', text: '#721c24' }
+      error: { bg: '#f8d7da', border: '#f5c6cb', text: '#721c24' }
     };
     const c = colors[type] || colors.info;
     submitStatus.style.cssText =
@@ -139,10 +139,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const responseUrl = ProfileManager.getFormResponseUrl(settings.baseUrl);
 
     const fields = {
-      [settings.fieldCourse]:  sessionData.course,
+      [settings.fieldCourse]: sessionData.course,
       [settings.fieldTeacher]: sessionData.teacher,
-      [settings.fieldDate]:    sessionData.date,
-      [settings.fieldTime]:    sessionData.time,
+      [settings.fieldDate]: sessionData.date,
+      [settings.fieldTime]: sessionData.time,
       [settings.fieldSession]: sessionData.sessionId
       // Champs étudiant laissés vides intentionnellement (ligne de séance)
     };
@@ -173,29 +173,34 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   function buildStudentUrl(settings, sessionData) {
     // URL de base de l'app (adapte selon l'environnement : local, GitHub Pages, etc.)
-    const base = window.location.href.replace('teacher.html', 'student.html').split('?')[0];
+    const path = window.location.pathname;
+    const directory = path.substring(0, path.lastIndexOf('/') + 1);
+    const base = window.location.origin + directory + 'student.html';
 
     // Données encodées dans l'URL (base64 JSON)
     const payload = ProfileManager.encodeSessionData({
-      f:  ProfileManager.getFormResponseUrl(settings.baseUrl), // URL /formResponse
-      c:  sessionData.course,
-      t:  sessionData.teacher,
-      d:  sessionData.date,
+      f: ProfileManager.getFormResponseUrl(settings.baseUrl), // URL /formResponse
+      c: sessionData.course,
+      t: sessionData.teacher,
+      d: sessionData.date,
       tm: sessionData.time,
-      s:  sessionData.sessionId,
+      s: sessionData.sessionId,
       e: {                                  // entry IDs des champs
-        c:  settings.fieldCourse,
-        t:  settings.fieldTeacher,
-        d:  settings.fieldDate,
+        c: settings.fieldCourse,
+        t: settings.fieldTeacher,
+        d: settings.fieldDate,
         tm: settings.fieldTime,
-        s:  settings.fieldSession,
-        n:  settings.fieldStudentName,
+        s: settings.fieldSession,
+        n: settings.fieldStudentName,
         fn: settings.fieldStudentFirstName,
         id: settings.fieldStudentId
       }
     });
 
-    return `${base}?d=${payload}`;
+    const url = `${base}?d=${payload}`;
+    console.log('URL étudiante générée:', url);
+    console.log('Payload:', payload);
+    return url;
   }
 
   // ============================================================
@@ -209,15 +214,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     try {
       new QRCode(qrcodeDiv, {
-        text:         url,
-        width:        260,
-        height:       260,
-        colorDark:    '#000000',
-        colorLight:   '#ffffff',
+        text: url,
+        width: 260,
+        height: 260,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.M,
-        version:      20
+        version: 20
       });
-      currentQRUrl   = url;
+      currentQRUrl = url;
       qrUrlInput.value = url;
       return true;
     } catch (err) {
@@ -232,11 +237,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   function renderSessionSummary(sessionData) {
     const items = [
-      { icon: '📚', label: 'Cours',       value: sessionData.course },
+      { icon: '📚', label: 'Cours', value: sessionData.course },
       { icon: '👨‍🏫', label: 'Enseignant', value: sessionData.teacher },
-      { icon: '📅', label: 'Date',        value: sessionData.date },
-      { icon: '⏰', label: 'Heure',       value: sessionData.time },
-      { icon: '🔑', label: 'Session ID',  value: sessionData.sessionId }
+      { icon: '📅', label: 'Date', value: sessionData.date },
+      { icon: '⏰', label: 'Heure', value: sessionData.time },
+      { icon: '🔑', label: 'Session ID', value: sessionData.sessionId }
     ];
     sessionSummary.innerHTML = items.map(i =>
       `<div style="flex:1; min-width:140px; font-size:0.9rem;">
@@ -255,10 +260,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const settings = getSettings();
     if (!settings) return;
 
-    const course    = document.getElementById('course').value.trim();
-    const teacher   = document.getElementById('teacher').value.trim();
-    const date      = document.getElementById('date').value;
-    const time      = document.getElementById('time').value;
+    const course = document.getElementById('course').value.trim();
+    const teacher = document.getElementById('teacher').value.trim();
+    const date = document.getElementById('date').value;
+    const time = document.getElementById('time').value;
 
     if (!course || !teacher || !date || !time) {
       alert('Veuillez remplir tous les champs obligatoires.');
@@ -305,16 +310,16 @@ document.addEventListener('DOMContentLoaded', function () {
   downloadBtn.addEventListener('click', () => {
     const canvas = qrcodeDiv.querySelector('canvas');
     if (!canvas) { alert('QR code non disponible.'); return; }
-    const link      = document.createElement('a');
-    link.download   = `presence_${Date.now()}.png`;
-    link.href       = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = `presence_${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
     link.click();
   });
 
   function resetForm() {
     sessionForm.reset();
-    document.getElementById('date').value  = today;
-    document.getElementById('time').value  = curTime;
+    document.getElementById('date').value = today;
+    document.getElementById('time').value = curTime;
     qrSection.classList.add('hidden');
     submitStatus.style.display = 'none';
     qrcodeDiv.innerHTML = '';

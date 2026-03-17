@@ -45,16 +45,24 @@
             </label>
             <label for="fileInput" class="btn btn-secondary"
               style="font-size:0.9rem; cursor:pointer; display:inline-block;">
-              Choisir une image
+              📂 Choisir une image
             </label>
             <input type="file" id="fileInput" accept="image/*"
               style="position:absolute; opacity:0; width:0.1px; height:0.1px; overflow:hidden;">
           </div>
+
+          <!-- Miniature de prévisualisation de l'image importée -->
+          <div id="imagePreviewContainer" style="display:none; margin-top:14px; text-align:center;">
+            <p style="font-size:0.8rem; color:#888; margin-bottom:6px;">Image importée :</p>
+            <img id="imagePreview" src="" alt="Aperçu QR code"
+              style="max-width:160px; max-height:160px; border-radius:8px;
+                     border:2px solid #c8e6c9; box-shadow:0 2px 8px rgba(0,0,0,.12);">
+          </div>
         </div>
 
-        <!-- Résultat du scan (erreur) -->
+        <!-- Zone de statut / résultat du scan -->
         <div class="section hidden" id="scanResultSection">
-          <p id="scanMessage" style="font-size:1rem; font-weight:bold; text-align:center;"></p>
+          <div id="scanMessage" style="font-size:0.95rem; line-height:1.6;"></div>
         </div>
 
       </div>
