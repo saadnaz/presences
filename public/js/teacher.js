@@ -62,6 +62,31 @@ document.addEventListener('DOMContentLoaded', function () {
       alert('Le profil n\'est pas encore configuré.\nRendez-vous dans Paramètres pour saisir l\'URL de votre Google Form et les IDs des champs.');
       return null;
     }
+
+    // Vérifier que les IDs des champs étudiant sont configurés (pas des placeholders)
+    const defaultIds = [
+      'entry.2222222222', 'entry.1111111111', 'entry.6666666666',
+      'entry.1234567890', 'entry.9876543210', 'entry.5555555555',
+      'entry.4444444444', 'entry.3333333333'
+    ];
+    const studentFields = [
+      { key: 'fieldStudentName',      label: 'Nom étudiant' },
+      { key: 'fieldStudentFirstName', label: 'Prénom étudiant' },
+      { key: 'fieldStudentId',        label: 'Numéro étudiant' }
+    ];
+    const unconfigured = studentFields.filter(f =>
+      !s[f.key] || defaultIds.includes(s[f.key])
+    );
+    if (unconfigured.length > 0) {
+      alert(
+        'Les champs suivants ne sont pas encore configurés :\n' +
+        unconfigured.map(f => '  • ' + f.label).join('\n') +
+        '\n\nRendez-vous dans Paramètres → utilisez le bookmarklet pour récupérer les IDs de votre Google Form.\n' +
+        'Ces IDs sont nécessaires pour que les données des étudiants s\'enregistrent correctement.'
+      );
+      return null;
+    }
+
     return s;
   }
 
@@ -278,16 +303,20 @@ document.addEventListener('DOMContentLoaded', function () {
       sessionId: generateSessionId()
     };
 
-    // 1. Soumettre la séance au Google Forms (enregistrement enseignant)
-    submitTeacherSession(settings, sessionData);
-
-    // 2. Construire l'URL étudiante (pointe vers student.html)
+    // Construire l'URL étudiante (pointe vers student.html avec toutes les données encodées)
     const studentUrl = buildStudentUrl(settings, sessionData);
 
-    // 3. Générer le QR code
+    // Générer le QR code
     if (!generateQRCode(studentUrl)) return;
 
-    // 4. Afficher le résumé + la section QR
+    // Afficher confirmation + résumé + section QR
+    // Note : l'enseignant ne soumet plus de ligne séparée dans Google Sheets.
+    // Chaque étudiant créera sa propre ligne complète (infos séance + infos personnelles).
+    showStatus(
+      '✅ <strong>QR code prêt.</strong><br>' +
+      '<small>Chaque étudiant qui scanne ce code ajoute une ligne dans Google Sheets avec ses informations et les données de la séance.</small>',
+      'success'
+    );
     renderSessionSummary(sessionData);
     qrSection.classList.remove('hidden');
     qrSection.scrollIntoView({ behavior: 'smooth' });
