@@ -323,7 +323,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       console.log('[Form] Soumission :', Object.keys(fields).length, 'champ(s)');
 
-      ProfileManager.submitToGoogleForms(session.f, fields)
+      // session.ps = nombre de sections du formulaire → génère pageHistory=0,1,...
+      ProfileManager.submitToGoogleForms(session.f, fields, session.ps || 1)
         .then(function () {
           showConfirmation(session, lastName, firstName, studentId);
         })

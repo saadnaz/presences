@@ -49,6 +49,36 @@
           </div>
 
           <!-- ================================================================
+               Reconnexion Google Sheets (si le sheet a été effacé ou déconnecté)
+               ================================================================ -->
+          <div style="margin: 0 0 25px; padding: 18px; background: #fce4ec; border: 2px solid #e91e63; border-radius: 10px;">
+            <h4 style="color: #880e4f; margin-bottom: 8px;">⚠️ Sheet déconnecté ou formulaire retravaillé ?</h4>
+            <p style="color: #555; font-size: 0.9rem; margin-bottom: 8px;">
+              Si vous avez <strong>effacé ou supprimé le Google Sheet</strong>, ou <strong>retravaillé votre formulaire</strong>, il faut :
+            </p>
+            <ol style="color: #555; font-size: 0.9rem; padding-left: 20px; margin: 0 0 8px;">
+              <li>Dans Google Forms → onglet <strong>Réponses</strong> → cliquer l'icône verte Sheets → <em>Créer une nouvelle feuille</em></li>
+              <li>Re-extraire les IDs des champs avec le bookmarklet ci-dessous (les IDs changent si le formulaire a été modifié)</li>
+              <li>Re-enregistrer la configuration ici</li>
+            </ol>
+          </div>
+
+          <!-- Nombre de sections du formulaire -->
+          <div class="form-group">
+            <label for="formSections">Nombre de sections du formulaire Google</label>
+            <select id="formSections" class="form-control" style="max-width:120px;">
+              <option value="1">1 section</option>
+              <option value="2">2 sections</option>
+              <option value="3">3 sections</option>
+              <option value="4">4 sections</option>
+            </select>
+            <small style="display:block; margin-top:4px; color:#e65100;">
+              ⚠️ Si votre formulaire a plusieurs sections/pages (ex. : section 1 = séance, section 2 = étudiant),
+              sélectionnez le bon nombre. Sans ça, les champs des sections 2+ ne seront <strong>pas enregistrés</strong> dans Google Sheets.
+            </small>
+          </div>
+
+          <!-- ================================================================
                Section Bookmarklet — méthode fiable pour extraire les entry IDs
                ================================================================ -->
           <div style="margin: 0 0 25px; padding: 18px; background: #fff8e1; border: 2px solid #FFC107; border-radius: 10px;">
@@ -57,25 +87,25 @@
               Faites glisser ce bouton dans votre <strong>barre de favoris</strong> du navigateur :
             </p>
             <a id="bookmarkletLink"
-              href="javascript:(function(){var d=window.FB_PUBLIC_LOAD_DATA_;if(!d){alert('Erreur\u00a0: ouvrez d\'abord votre formulaire Google Forms dans cet onglet.');return;}var q=d&&d[1]&&d[1][1];var ids=[];if(Array.isArray(q)){q.forEach(function(f){if(Array.isArray(f)&&Array.isArray(f[4])){f[4].forEach(function(s){if(Array.isArray(s)&&typeof s[0]==='number')ids.push('entry.'+s[0]);});}});}if(ids.length){prompt('Copiez ces\u00a0'+ids.length+'\u00a0IDs (Ctrl+A puis Ctrl+C), puis collez-les dans l\'application\u00a0:',ids.join(', '));}else{alert('Aucun champ trouv\u00e9. Assurez-vous d\'avoir ouvert la page du formulaire Google Forms.');}})();"
+              href="javascript:(function(){var d=window.FB_PUBLIC_LOAD_DATA_;if(!d){alert('Erreur: ouvrez d\'abord votre formulaire Google Forms dans cet onglet (page /viewform).');return;}var q=d&&d[1]&&d[1][1];if(!Array.isArray(q)){alert('Structure non reconnue. Rafraîchissez la page du formulaire.');return;}var fields=[];var sections=1;q.forEach(function(f){if(!Array.isArray(f))return;if(f[3]===8||f[3]===11){sections++;return;}var label=(f[1]&&typeof f[1]==='string')?f[1].trim():'(sans titre)';if(Array.isArray(f[4])){f[4].forEach(function(s){if(Array.isArray(s)&&typeof s[0]==='number')fields.push(label+' : entry.'+s[0]);});}});if(!fields.length){alert('Aucun champ trouvé. Assurez-vous d\'avoir ouvert la page /viewform du formulaire.');return;}var out=fields.join('\n');out+='\n\nSECTIONS:'+sections;prompt('Copiez tout (Ctrl+A puis Ctrl+C) — '+fields.length+' champ(s), '+sections+' section(s) :',out);})();"
               style="display:inline-block; padding:10px 20px; background:#FF9800; color:white; border-radius:8px; font-weight:bold; text-decoration:none; cursor:grab; border:2px dashed #e65100;"
               title="Faites glisser ce bouton dans la barre de favoris">
               📋 Extraire les IDs du formulaire
             </a>
             <p style="margin-top: 12px; color: #777; font-size: 0.85rem;">
-              <strong>Étape 2</strong> — Ouvrez votre formulaire Google Forms dans un onglet du navigateur.<br>
-              <strong>Étape 3</strong> — Cliquez sur le favori dans votre barre. Une fenêtre avec les IDs apparaît.<br>
-              <strong>Étape 4</strong> — Copiez tous les IDs (Ctrl+A, Ctrl+C) et collez-les ci-dessous.
+              <strong>Étape 2</strong> — Ouvrez votre formulaire Google Forms dans un onglet (page <code>/viewform</code>).<br>
+              <strong>Étape 3</strong> — Cliquez sur le favori. Une fenêtre affiche les champs et leur ID, <em>avec le nombre de sections</em>.<br>
+              <strong>Étape 4</strong> — Copiez tout (Ctrl+A, Ctrl+C) et collez ci-dessous. L'import détectera automatiquement les champs.
             </p>
           </div>
 
           <!-- Zone de collage des IDs copiés depuis le bookmarklet -->
           <div style="margin: 0 0 25px; padding: 18px; background: #e3f2fd; border: 2px solid #2196F3; border-radius: 10px;">
-            <h4 style="color: #1565c0; margin-bottom: 10px;">📥 Étape 4 — Collez les IDs ici</h4>
+            <h4 style="color: #1565c0; margin-bottom: 10px;">📥 Étape 4 — Collez le résultat du bookmarklet ici</h4>
             <div class="form-group" style="margin-bottom:10px;">
-              <textarea id="pasteIds" rows="3"
+              <textarea id="pasteIds" rows="5"
                 style="width:100%; padding:10px; border:1px solid #90caf9; border-radius:6px; font-family:monospace; font-size:0.9rem; resize:vertical;"
-                placeholder="Exemple : entry.12345678, entry.98765432, entry.55554444 …"></textarea>
+                placeholder="Exemple de résultat attendu :&#10;Matière : entry.123456789&#10;Enseignant : entry.987654321&#10;Nom étudiant : entry.555444333&#10;...&#10;SECTIONS:2"></textarea>
             </div>
             <button type="button" id="importIdsBtn" class="btn btn-secondary">Importer et assigner les IDs →</button>
           </div>

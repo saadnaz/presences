@@ -20,10 +20,12 @@ document.addEventListener('DOMContentLoaded', function () {
   const deleteProfileBtn = document.getElementById('deleteProfileBtn');
   const importIdsBtn = document.getElementById('importIdsBtn');
   const pasteIdsTextarea = document.getElementById('pasteIds');
+  const formSectionsSelect = document.getElementById('formSections');
 
   // Valeurs par défaut (pour nouveau profil)
   const DEFAULT_VALUES = {
     BASE_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSe.../viewform',
+    FORM_SECTIONS: 1,
     FIELD_COURSE: 'entry.1234567890',
     FIELD_TEACHER: 'entry.9876543210',
     FIELD_DATE: 'entry.5555555555',
@@ -86,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     baseUrlInput.value = settings.baseUrl || DEFAULT_VALUES.BASE_URL;
+    if (formSectionsSelect) formSectionsSelect.value = String(settings.formSections || DEFAULT_VALUES.FORM_SECTIONS);
     fieldCourseInput.value = settings.fieldCourse || DEFAULT_VALUES.FIELD_COURSE;
     fieldTeacherInput.value = settings.fieldTeacher || DEFAULT_VALUES.FIELD_TEACHER;
     fieldDateInput.value = settings.fieldDate || DEFAULT_VALUES.FIELD_DATE;
@@ -98,6 +101,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function resetFormToDefaults() {
     baseUrlInput.value = DEFAULT_VALUES.BASE_URL;
+    if (formSectionsSelect) formSectionsSelect.value = String(DEFAULT_VALUES.FORM_SECTIONS);
     fieldCourseInput.value = DEFAULT_VALUES.FIELD_COURSE;
     fieldTeacherInput.value = DEFAULT_VALUES.FIELD_TEACHER;
     fieldDateInput.value = DEFAULT_VALUES.FIELD_DATE;
@@ -115,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     const settings = {
       baseUrl: baseUrlInput.value.trim(),
+      formSections: formSectionsSelect ? parseInt(formSectionsSelect.value, 10) : 1,
       fieldCourse: fieldCourseInput.value.trim(),
       fieldTeacher: fieldTeacherInput.value.trim(),
       fieldDate: fieldDateInput.value.trim(),
@@ -222,53 +227,169 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /**
    * Parse et importe les IDs collés depuis le bookmarklet.
-   * Accepte : virgule, espace, retour à la ligne comme séparateurs.
+   * Supporte deux formats :
+   *   - Nouveau (avec labels) : "Nom du champ : entry.12345678"
+   *   - Ancien (IDs seuls)   : "entry.12345678, entry.98765432"
+   *
+   * Détecte automatiquement le nombre de sections si la ligne
+   * "SECTIONS:N" est présente dans la sortie du bookmarklet.
    */
   function importIds() {
     const raw = pasteIdsTextarea ? pasteIdsTextarea.value.trim() : '';
     if (!raw) {
-      alert('Veuillez coller les IDs dans le champ texte.');
+      alert('Veuillez coller le résultat du bookmarklet dans le champ texte.');
       return;
     }
-    // Extraire tous les tokens au format entry.XXXXXXXXX
+
+    // ── Détecter le nombre de sections (ligne "SECTIONS:N") ────────
+    const sectionsMatch = raw.match(/SECTIONS:(\d+)/i);
+    if (sectionsMatch && formSectionsSelect) {
+      const detectedSections = parseInt(sectionsMatch[1], 10);
+      if (detectedSections >= 1 && detectedSections <= 4) {
+        formSectionsSelect.value = String(detectedSections);
+      }
+    }
+
+    // ── Parser les lignes avec labels ──────────────────────────────
+    // Format : "Label : entry.XXXXXXXXX"
+    const labeledEntries = [];
+    const lines = raw.split('\n');
+    lines.forEach(function (line) {
+      const m = line.match(/^(.+?)\s*:\s*(entry\.\d+)/i);
+      if (m) {
+        labeledEntries.push({ label: m[1].trim(), id: m[2].trim() });
+      }
+    });
+
+    if (labeledEntries.length > 0) {
+      // Nouveau format avec labels → auto-mapping intelligent
+      autoAssignFromLabels(labeledEntries);
+      return;
+    }
+
+    // ── Ancien format : IDs seuls ──────────────────────────────────
     const matches = raw.match(/entry\.\d+/g);
     if (!matches || matches.length === 0) {
       alert(
-        'Aucun ID au format "entry.XXXXXXXXX" trouvé dans le texte collé.\n\n' +
-        'Assurez-vous d\'avoir bien copié le résultat du bookmarklet.\n' +
-        'Exemple attendu : entry.12345678, entry.98765432, …'
+        'Aucun ID au format "entry.XXXXXXXXX" trouvé.\n\n' +
+        'Assurez-vous d\'avoir copié le résultat complet du bookmarklet.'
       );
       return;
     }
-    // Dédupliquer en conservant l'ordre
     const seen = new Set();
     const entryIds = matches.filter(id => !seen.has(id) && seen.add(id));
-    showMappingPanel(entryIds);
+    showMappingPanel(entryIds.map(id => ({ label: id, id })));
   }
 
   /**
-   * Affiche le panneau d'assignation des IDs détectés.
-   * Permet à l'enseignant d'associer chaque entry.xxx au bon champ du formulaire.
+   * Auto-mapping intelligent basé sur les labels des champs du formulaire.
+   * Utilise des mots-clés pour deviner quel champ correspond à quel entry ID.
    */
-  function showMappingPanel(entryIds) {
+  function autoAssignFromLabels(labeledEntries) {
+    // Mots-clés par champ (ordre : plus spécifique d'abord)
+    const KEYWORDS = {
+      fieldStudentFirstName: ['prénom', 'prenom', 'first name', 'firstname', 'given'],
+      fieldStudentName:      ['nom', 'name', 'last name', 'lastname', 'family'],
+      fieldStudentId:        ['numéro', 'numero', 'matricule', 'student id', 'étudiant id', 'id étudiant', 'id'],
+      fieldCourse:           ['matière', 'matiere', 'cours', 'course', 'module', 'subject'],
+      fieldTeacher:          ['enseignant', 'teacher', 'prof', 'formateur'],
+      fieldDate:             ['date'],
+      fieldTime:             ['heure', 'time', 'horaire'],
+      fieldSession:          ['session', 'séance', 'seance', 'id session', 'session id']
+    };
+
+    const assigned = {};
+
+    // Pour chaque champ cible, trouver le meilleur candidat par mots-clés
+    Object.entries(KEYWORDS).forEach(([fieldKey, keywords]) => {
+      for (const kw of keywords) {
+        const match = labeledEntries.find(e =>
+          e.label.toLowerCase().includes(kw) && !Object.values(assigned).includes(e.id)
+        );
+        if (match) {
+          assigned[fieldKey] = match.id;
+          break;
+        }
+      }
+    });
+
+    // Appliquer les assignations trouvées
+    let countAssigned = 0;
+    const fieldInputs = {
+      fieldCourse:           fieldCourseInput,
+      fieldTeacher:          fieldTeacherInput,
+      fieldDate:             fieldDateInput,
+      fieldTime:             fieldTimeInput,
+      fieldSession:          fieldSessionInput,
+      fieldStudentName:      fieldStudentNameInput,
+      fieldStudentFirstName: fieldStudentFirstNameInput,
+      fieldStudentId:        fieldStudentIdInput
+    };
+    Object.entries(assigned).forEach(([fieldKey, entryId]) => {
+      if (fieldInputs[fieldKey] && entryId) {
+        fieldInputs[fieldKey].value = entryId;
+        countAssigned++;
+      }
+    });
+
+    // Les champs non auto-assignés → afficher le panneau de mapping manuel
+    const unassigned = labeledEntries.filter(e => !Object.values(assigned).includes(e.id));
+    const totalFields = labeledEntries.length;
+
+    if (countAssigned === totalFields || unassigned.length === 0) {
+      alert(
+        `✅ ${countAssigned} champ(s) assigné(s) automatiquement sur ${totalFields}.\n\n` +
+        'Vérifiez les champs ci-dessous puis cliquez sur « Enregistrer la configuration ».'
+      );
+    } else {
+      // Afficher le panneau pour les non-assignés
+      showMappingPanel(labeledEntries);
+      const info = document.getElementById('detectInfo');
+      if (info) info.textContent =
+        `✅ ${countAssigned} champ(s) auto-assigné(s). ` +
+        `Vérifiez et complétez les ${unassigned.length} champ(s) restant(s).`;
+    }
+  }
+
+  /**
+   * Affiche le panneau d'assignation manuelle.
+   * @param {Array} entries  Tableau de {label, id} ou simples chaînes entry.xxx
+   */
+  function showMappingPanel(entries) {
     const panel = document.getElementById('detectPanel');
     const mappingsDiv = document.getElementById('detectMappings');
 
+    // Normaliser : accepte [{label,id}] ou ['entry.xxx']
+    const normalized = entries.map(e =>
+      typeof e === 'string' ? { label: e, id: e } : e
+    );
+
     if (!panel || !mappingsDiv) {
-      // Fallback simple : assigner dans l'ordre
+      // Fallback simple
       FIELD_DEFS.forEach((field, i) => {
-        if (entryIds[i]) field.input().value = entryIds[i];
+        if (normalized[i]) field.input().value = normalized[i].id;
       });
-      alert(`${entryIds.length} ID(s) détecté(s) et assignés dans l'ordre. Vérifiez les champs.`);
+      alert(`${normalized.length} ID(s) assigné(s) dans l'ordre. Vérifiez les champs.`);
       return;
     }
 
-    // Vider le panneau précédent
+    // Lire les valeurs actuelles pour pré-sélectionner
+    const currentValues = {
+      course:           fieldCourseInput.value,
+      teacher:          fieldTeacherInput.value,
+      date:             fieldDateInput.value,
+      time:             fieldTimeInput.value,
+      session:          fieldSessionInput.value,
+      studentName:      fieldStudentNameInput.value,
+      studentFirstName: fieldStudentFirstNameInput.value,
+      studentId:        fieldStudentIdInput.value
+    };
+
     mappingsDiv.innerHTML = '';
 
-    FIELD_DEFS.forEach((field, index) => {
+    FIELD_DEFS.forEach((field) => {
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex; align-items:center; gap:12px; margin-bottom:10px;';
+      row.style.cssText = 'display:flex; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap;';
 
       const lbl = document.createElement('label');
       lbl.textContent = field.label;
@@ -277,21 +398,21 @@ document.addEventListener('DOMContentLoaded', function () {
       const sel = document.createElement('select');
       sel.id = 'map_' + field.key;
       sel.className = 'form-control';
-      sel.style.cssText = 'flex:1; padding:8px 12px; border:1px solid #ccc; border-radius:6px;';
+      sel.style.cssText = 'flex:1; min-width:200px; padding:8px 12px; border:1px solid #ccc; border-radius:6px;';
 
-      // Option vide
       const emptyOpt = document.createElement('option');
       emptyOpt.value = '';
       emptyOpt.textContent = '— Ne pas remplir —';
       sel.appendChild(emptyOpt);
 
-      // Options pour chaque entry trouvé
-      entryIds.forEach((id, i) => {
+      normalized.forEach((entry) => {
         const opt = document.createElement('option');
-        opt.value = id;
-        opt.textContent = id;
-        // Pré-sélection par défaut dans l'ordre d'apparition
-        if (i === index) opt.selected = true;
+        opt.value = entry.id;
+        opt.textContent = entry.label !== entry.id
+          ? entry.label + ' (' + entry.id + ')'
+          : entry.id;
+        // Pré-sélectionner si déjà assigné ou si valeur courante correspond
+        if (entry.id === currentValues[field.key]) opt.selected = true;
         sel.appendChild(opt);
       });
 
@@ -300,9 +421,8 @@ document.addEventListener('DOMContentLoaded', function () {
       mappingsDiv.appendChild(row);
     });
 
-    // Afficher le résumé du nombre d'IDs trouvés
     const info = document.getElementById('detectInfo');
-    if (info) info.textContent = `✅ ${entryIds.length} champ(s) détecté(s) dans le formulaire.`;
+    if (info) info.textContent = `${normalized.length} champ(s) détecté(s) dans le formulaire. Vérifiez les associations.`;
 
     panel.classList.remove('hidden');
     panel.scrollIntoView({ behavior: 'smooth' });
@@ -312,14 +432,16 @@ document.addEventListener('DOMContentLoaded', function () {
    * Applique la configuration depuis le panneau de mapping vers les champs du formulaire.
    */
   function applyMapping() {
+    let count = 0;
     FIELD_DEFS.forEach(field => {
       const sel = document.getElementById('map_' + field.key);
       if (sel && sel.value) {
         field.input().value = sel.value;
+        count++;
       }
     });
     document.getElementById('detectPanel').classList.add('hidden');
-    alert("Configuration appliquée ! N'oubliez pas de cliquer sur «\u00a0Enregistrer la configuration\u00a0».");
+    alert(`${count} champ(s) appliqué(s).\nN'oubliez pas de cliquer sur « Enregistrer la configuration ».`);
   }
 
   // ---------------------------------------------------------------------------

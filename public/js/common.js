@@ -30,6 +30,7 @@ function createProfile(name, pin = '') {
   saveProfiles(profiles);
   const defaultSettings = {
     baseUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSe.../viewform',
+    formSections: 1,          // Nombre de sections du formulaire Google
     fieldCourse: 'entry.1234567890',
     fieldTeacher: 'entry.9876543210',
     fieldDate: 'entry.5555555555',
@@ -95,12 +96,27 @@ function verifyPin(profileId, enteredPin) {
  * au niveau réseau, la Promise resolve — si le réseau coupe, elle
  * rejette.
  *
+ * IMPORTANT pour les formulaires multi-sections :
+ *   Google Forms exige le paramètre `pageHistory` pour enregistrer
+ *   les réponses des sections autres que la première.
+ *   pageHistory = "0" pour 1 section, "0,1" pour 2 sections, etc.
+ *
  * @param {string} responseUrl  URL /formResponse du formulaire
  * @param {Object} fields       { 'entry.xxx': 'valeur', ... }
+ * @param {number} [pageCount]  Nombre de sections du formulaire (défaut : 1)
  * @returns {Promise}
  */
-function submitToGoogleForms(responseUrl, fields) {
-  const body = Object.entries(fields)
+function submitToGoogleForms(responseUrl, fields, pageCount) {
+  // Construire pageHistory selon le nombre de sections
+  var sections = (pageCount && pageCount > 0) ? parseInt(pageCount, 10) : 1;
+  var pages = [];
+  for (var i = 0; i < sections; i++) pages.push(i);
+  var pageHistory = pages.join(',');
+
+  // Fusionner les champs métier avec pageHistory
+  var allFields = Object.assign({}, fields, { pageHistory: pageHistory });
+
+  const body = Object.entries(allFields)
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v))
     .join('&');

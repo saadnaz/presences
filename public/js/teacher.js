@@ -204,19 +204,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Données encodées dans l'URL (base64 JSON)
     const payload = ProfileManager.encodeSessionData({
-      f: ProfileManager.getFormResponseUrl(settings.baseUrl), // URL /formResponse
-      c: sessionData.course,
-      t: sessionData.teacher,
-      d: sessionData.date,
+      f:  ProfileManager.getFormResponseUrl(settings.baseUrl), // URL /formResponse
+      ps: settings.formSections || 1,        // nombre de sections (pageHistory)
+      c:  sessionData.course,
+      t:  sessionData.teacher,
+      d:  sessionData.date,
       tm: sessionData.time,
-      s: sessionData.sessionId,
-      e: {                                  // entry IDs des champs
-        c: settings.fieldCourse,
-        t: settings.fieldTeacher,
-        d: settings.fieldDate,
+      s:  sessionData.sessionId,
+      e: {                                   // entry IDs des champs
+        c:  settings.fieldCourse,
+        t:  settings.fieldTeacher,
+        d:  settings.fieldDate,
         tm: settings.fieldTime,
-        s: settings.fieldSession,
-        n: settings.fieldStudentName,
+        s:  settings.fieldSession,
+        n:  settings.fieldStudentName,
         fn: settings.fieldStudentFirstName,
         id: settings.fieldStudentId
       }
