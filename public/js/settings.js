@@ -485,6 +485,67 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // ── Bouton : charger le mapping depuis mapping-id.json ──────────────────
+  const loadMappingFileBtn = document.getElementById('loadMappingFileBtn');
+  const loadMappingFileMsg = document.getElementById('loadMappingFileMsg');
+
+  function showLoadMsg(text, ok) {
+    if (!loadMappingFileMsg) return;
+    loadMappingFileMsg.style.display = 'inline';
+    loadMappingFileMsg.style.color = ok ? '#2e7d32' : '#b71c1c';
+    loadMappingFileMsg.textContent = text;
+    if (ok) setTimeout(function () { loadMappingFileMsg.style.display = 'none'; }, 4000);
+  }
+
+  if (loadMappingFileBtn) {
+    loadMappingFileBtn.addEventListener('click', function () {
+      loadMappingFileBtn.disabled = true;
+      loadMappingFileBtn.textContent = '⏳ Chargement…';
+
+      fetch('mapping-id.json?_=' + Date.now())
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          loadMappingFileBtn.disabled = false;
+          loadMappingFileBtn.textContent = '📂 Charger mapping-id.json';
+
+          // 1. URL de base
+          if (data.baseUrl && baseUrlInput) {
+            baseUrlInput.value = data.baseUrl;
+          }
+
+          // 2. Nombre de sections
+          if (data.sections && formSectionsSelect) {
+            var s = parseInt(data.sections, 10);
+            if (s >= 1 && s <= 4) formSectionsSelect.value = String(s);
+          }
+
+          // 3. Mapping → réutilise autoAssignFromLabels (remplace _ par espace pour la correspondance)
+          if (data.mapping && typeof data.mapping === 'object') {
+            var entries = Object.entries(data.mapping).map(function (kv) {
+              return { label: kv[0].replace(/_/g, ' '), id: kv[1] };
+            });
+            if (entries.length > 0) {
+              autoAssignFromLabels(entries);
+              showLoadMsg('✅ ' + entries.length + ' champ(s) chargé(s) depuis mapping-id.json', true);
+            } else {
+              showLoadMsg('⚠️ Aucun champ trouvé dans mapping-id.json', false);
+            }
+          } else {
+            showLoadMsg('⚠️ Clé "mapping" absente du fichier JSON', false);
+          }
+        })
+        .catch(function (err) {
+          loadMappingFileBtn.disabled = false;
+          loadMappingFileBtn.textContent = '📂 Charger mapping-id.json';
+          console.error('[Mapping] Erreur fetch :', err);
+          showLoadMsg('❌ Fichier mapping-id.json introuvable ou invalide', false);
+        });
+    });
+  }
+
   // ── Bouton mobile : copier le code du bookmarklet dans le presse-papier ──
   const copyBookmarkletBtn = document.getElementById('copyBookmarkletBtn');
   if (copyBookmarkletBtn) {

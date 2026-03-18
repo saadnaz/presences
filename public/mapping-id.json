@@ -1,0 +1,14 @@
+{
+  "baseUrl": "https://docs.google.com/forms/d/e/1FAIpQLSeDFRIrmj20AKUQq1Mhvrhn-TF67hLcuwrALvBGqxyLMkiz-Q/viewform",
+  "sections": 2,
+  "mapping": {
+    "matiere": "entry.427007253",
+    "enseignant": "entry.873769439",
+    "date": "entry.296934241",
+    "heure": "entry.1459757280",
+    "id_session": "entry.427454552",
+    "nom_etudiant": "entry.1716252971",
+    "prenom_etudiant": "entry.2021761318",
+    "numero_etudiant": "entry.385097177"
+  }
+}

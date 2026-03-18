@@ -45,6 +45,10 @@ header p {
   color: #7f8c8d;
 }
 
+main {
+  display: none;
+}
+
 /* Cartes */
 .cards {
   display: flex;

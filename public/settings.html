@@ -135,6 +135,22 @@
             <button type="button" id="importIdsBtn" class="btn btn-secondary">Importer et assigner les IDs →</button>
           </div>
 
+          <!-- ================================================================
+               Chargement automatique depuis mapping-id.json
+               ================================================================ -->
+          <div style="margin: 0 0 25px; padding: 18px; background: #f3e5f5; border: 2px solid #9c27b0; border-radius: 10px;">
+            <h4 style="color: #6a1b9a; margin-bottom: 8px;">📂 Charger depuis le fichier de mapping</h4>
+            <p style="color: #555; font-size: 0.9rem; margin-bottom: 12px;">
+              Si vous avez un fichier <strong>mapping-id.json</strong> dans le dossier <code>public/</code> de l'application,
+              cliquez ci-dessous pour charger automatiquement l'URL, le nombre de sections et tous les IDs de champs.
+            </p>
+            <button type="button" id="loadMappingFileBtn"
+              style="padding:10px 20px; background:#9c27b0; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.95rem; cursor:pointer;">
+              📂 Charger mapping-id.json
+            </button>
+            <span id="loadMappingFileMsg" style="display:none; margin-left:12px; font-size:0.85rem; font-weight:bold;"></span>
+          </div>
+
           <!-- Panneau de mapping affiché après import des IDs -->
           <div id="detectPanel" class="hidden"
             style="margin: 0 0 25px; padding: 20px; background: #e8f5e9; border: 2px solid #4CAF50; border-radius: 10px;">
