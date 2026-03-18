@@ -4,8 +4,8 @@
   "description": "Application de gestion des présences étudiants via QR code",
   "main": "public/index.html",
   "scripts": {
-    "start": "serve public -l 3000",
-    "dev": "serve public -l 3000",
+    "start": "serve public -l 3000 --ssl-cert ssl/cert.pem --ssl-key ssl/key.pem",
+    "dev": "serve public -l 3000 --ssl-cert ssl/cert.pem --ssl-key ssl/key.pem",
     "test": "echo \"No tests specified\" && exit 0",
     "build": "echo \"No build step required\""
   },

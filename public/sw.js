@@ -1,4 +1,4 @@
-const CACHE_NAME = 'presence-v6';
+const CACHE_NAME = 'presence-v7';
 
 // Obtenir les URLs à mettre en cache dynamiquement selon le scope (compatible GitHub Pages)
 function getUrlsToCache(scope) {

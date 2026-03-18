@@ -484,4 +484,42 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('detectPanel').classList.add('hidden');
     });
   }
+
+  // ── Bouton mobile : copier le code du bookmarklet dans le presse-papier ──
+  const copyBookmarkletBtn = document.getElementById('copyBookmarkletBtn');
+  if (copyBookmarkletBtn) {
+    copyBookmarkletBtn.addEventListener('click', function () {
+      const link = document.getElementById('bookmarkletLink');
+      if (!link) return;
+      const code = link.getAttribute('href');
+      const msg = document.getElementById('copyBookmarkletMsg');
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(function () {
+          if (msg) { msg.style.display = 'inline'; setTimeout(function () { msg.style.display = 'none'; }, 2500); }
+        }).catch(function () {
+          fallbackCopy(code, msg);
+        });
+      } else {
+        fallbackCopy(code, msg);
+      }
+    });
+  }
+
+  function fallbackCopy(text, msgEl) {
+    // Fallback pour navigateurs sans Clipboard API (ex : Android WebView)
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (msgEl) { msgEl.style.display = 'inline'; setTimeout(function () { msgEl.style.display = 'none'; }, 2500); }
+    } catch (e) {
+      alert('Impossible de copier automatiquement.\nCopiez manuellement le contenu de la zone texte ci-dessus.');
+    }
+    document.body.removeChild(ta);
+  }
 });

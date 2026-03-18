@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   // Détection du mode : formulaire présence (URL ?d=) ou scanner
   // ============================================================
-  var params  = new URLSearchParams(window.location.search);
+  var params = new URLSearchParams(window.location.search);
   var encoded = params.get('d');
   var sessionFromUrl = null;
 
@@ -27,39 +27,74 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   function startScanner() {
     document.getElementById('scannerSection').style.display = 'block';
-    document.getElementById('formSection').style.display    = 'none';
+    document.getElementById('formSection').style.display = 'none';
     document.getElementById('confirmSection').style.display = 'none';
 
-    var video      = document.getElementById('video');
-    var canvas     = document.getElementById('canvas');
-    var ctx        = canvas.getContext('2d');
-    var startBtn   = document.getElementById('startBtn');
-    var stopBtn    = document.getElementById('stopBtn');
-    var fileInput  = document.getElementById('fileInput');
-    var resultDiv  = document.getElementById('scanResultSection');
-    var msgDiv     = document.getElementById('scanMessage');
+    var video = document.getElementById('video');
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    var startBtn = document.getElementById('startBtn');
+    var stopBtn = document.getElementById('stopBtn');
+    var fileInput = document.getElementById('fileInput');
+    var resultDiv = document.getElementById('scanResultSection');
+    var msgDiv = document.getElementById('scanMessage');
     var previewBox = document.getElementById('imagePreviewContainer');
     var previewImg = document.getElementById('imagePreview');
 
-    var stream       = null;
-    var scanning     = false;
+    var stream = null;
+    var scanning = false;
     var scanInterval = null;
-    var lastUrl      = '';
+    var lastUrl = '';
 
     // ── Caméra ────────────────────────────────────────────────────
     function startCamera() {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+      // Vérifier si le contexte est sécurisé (HTTPS ou localhost) pour mobile
+      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (!isSecure) {
+        showMsg(
+          '<strong>⚠️ Contexte non sécurisé</strong><br>' +
+          'La caméra nécessite une connexion HTTPS sur les mobiles.<br>' +
+          'Essayez d\'accéder via <code>https://' + window.location.hostname + ':3000</code> si vous avez configuré un certificat, ' +
+          'ou utilisez l\'import d\'image ci‑dessous.',
+          'warn'
+        );
+        // Ne pas bloquer, laisser l'utilisateur essayer quand même (certains navigateurs peuvent fonctionner)
+      }
+
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      })
         .then(function (s) {
           stream = s;
           video.srcObject = stream;
+          // iOS Safari exige un appel explicite à play() après srcObject
+          var playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(function (err) {
+              console.warn('[Camera] video.play() rejeté :', err);
+            });
+          }
           startBtn.disabled = true;
-          stopBtn.disabled  = false;
+          stopBtn.disabled = false;
           scanning = true;
-          scanInterval = setInterval(scanFrame, 400);
+          scanInterval = setInterval(scanFrame, 300);
         })
         .catch(function (err) {
-          console.error(err);
-          showMsg('Impossible d\'accéder à la caméra. Vérifiez les permissions.', 'error');
+          console.error('Erreur caméra:', err);
+          let message = 'Impossible d\'accéder à la caméra. ';
+          if (err.name === 'NotAllowedError') {
+            message += 'Vous avez refusé l\'autorisation ou celle‑ci n\'a pas été demandée.';
+          } else if (err.name === 'NotFoundError') {
+            message += 'Aucune caméra n\'a été trouvée.';
+          } else if (err.name === 'NotReadableError') {
+            message += 'La caméra est déjà utilisée par une autre application.';
+          } else if (err.name === 'OverconstrainedError') {
+            message += 'La contrainte facingMode: "environment" n\'est pas supportée.';
+          } else {
+            message += 'Vérifiez les permissions et assurez‑vous que le site est en HTTPS (sur mobile).';
+          }
+          showMsg('<strong>❌ ' + message + '</strong>', 'error');
         });
     }
 
@@ -71,15 +106,22 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       scanning = false;
       startBtn.disabled = false;
-      stopBtn.disabled  = true;
+      stopBtn.disabled = true;
       if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
     }
 
     function scanFrame() {
       if (!scanning || video.readyState !== video.HAVE_ENOUGH_DATA) return;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
+      // Synchroniser les dimensions du canvas avec celles réelles du flux vidéo
+      var vw = video.videoWidth || 300;
+      var vh = video.videoHeight || 300;
+      if (canvas.width !== vw || canvas.height !== vh) {
+        canvas.width = vw;
+        canvas.height = vh;
+      }
+      ctx.drawImage(video, 0, 0, vw, vh);
+      var imgData = ctx.getImageData(0, 0, vw, vh);
+      var code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
       if (code) processQrUrl(code.data);
     }
 
@@ -160,15 +202,15 @@ document.addEventListener('DOMContentLoaded', function () {
       showMsg('⏳ Analyse de l\'image <strong>' + escHtml(file.name) + '</strong>…', 'info');
 
       var objUrl = URL.createObjectURL(file);
-      previewImg.src  = objUrl;
+      previewImg.src = objUrl;
       previewBox.style.display = 'block';
 
-      var img    = new Image();
+      var img = new Image();
       var reader = new FileReader();
 
       reader.onload = function (ev) {
         img.onload = function () {
-          canvas.width  = img.naturalWidth;
+          canvas.width = img.naturalWidth;
           canvas.height = img.naturalHeight;
           ctx.drawImage(img, 0, 0);
           console.log('[QR] Image :', canvas.width, 'x', canvas.height);
@@ -206,9 +248,9 @@ document.addEventListener('DOMContentLoaded', function () {
     function showMsg(html, type) {
       var palette = {
         success: { bg: '#d4edda', bd: '#c3e6cb', tx: '#155724' },
-        info:    { bg: '#d1ecf1', bd: '#bee5eb', tx: '#0c5460' },
-        warn:    { bg: '#fff3cd', bd: '#ffeeba', tx: '#856404' },
-        error:   { bg: '#f8d7da', bd: '#f5c6cb', tx: '#721c24' }
+        info: { bg: '#d1ecf1', bd: '#bee5eb', tx: '#0c5460' },
+        warn: { bg: '#fff3cd', bd: '#ffeeba', tx: '#856404' },
+        error: { bg: '#f8d7da', bd: '#f5c6cb', tx: '#721c24' }
       };
       var p = palette[type] || palette.info;
       msgDiv.innerHTML = html;
@@ -239,9 +281,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Basculer les sections
     document.getElementById('scannerSection').style.display = 'none';
-    document.getElementById('formSection').style.display    = 'block';
+    document.getElementById('formSection').style.display = 'block';
     document.getElementById('confirmSection').style.display = 'none';
-    document.getElementById('pageSubtitle').textContent     = 'Complétez vos informations';
+    document.getElementById('pageSubtitle').textContent = 'Complétez vos informations';
 
     // Scroll vers le haut pour que l'étudiant voie le formulaire
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -253,10 +295,10 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     var items = [
-      { icon: '📚', label: 'Cours',      val: session.c  },
-      { icon: '👨‍🏫', label: 'Enseignant', val: session.t  },
-      { icon: '📅', label: 'Date',       val: formatDate(session.d) },
-      { icon: '⏰', label: 'Heure',      val: session.tm }
+      { icon: '📚', label: 'Cours', val: session.c },
+      { icon: '👨‍🏫', label: 'Enseignant', val: session.t },
+      { icon: '📅', label: 'Date', val: formatDate(session.d) },
+      { icon: '⏰', label: 'Heure', val: session.tm }
     ];
     grid.innerHTML = items.map(function (it) {
       return '<div style="padding:10px 12px;background:white;border-radius:8px;border:1px solid #c8e6c9;">' +
@@ -266,9 +308,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }).join('');
 
     // Vider d'éventuels champs préremplis
-    document.getElementById('studentLastName').value  = '';
+    document.getElementById('studentLastName').value = '';
     document.getElementById('studentFirstName').value = '';
-    document.getElementById('studentId').value        = '';
+    document.getElementById('studentId').value = '';
 
     // Mettre le focus sur le premier champ
     setTimeout(function () {
@@ -276,20 +318,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 300);
 
     // Gestion de la soumission
-    var form      = document.getElementById('attendanceForm');
+    var form = document.getElementById('attendanceForm');
     var submitBtn = document.getElementById('attendanceSubmitBtn');
     var statusDiv = document.getElementById('attendanceStatus');
 
     // Cloner le formulaire pour supprimer les anciens listeners (cas de multi-scan)
     var newForm = form.cloneNode(true);
     form.parentNode.replaceChild(newForm, form);
-    form      = newForm;
+    form = newForm;
     submitBtn = document.getElementById('attendanceSubmitBtn');
 
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
 
-      var lastName  = document.getElementById('studentLastName').value.trim();
+      var lastName = document.getElementById('studentLastName').value.trim();
       var firstName = document.getElementById('studentFirstName').value.trim();
       var studentId = document.getElementById('studentId').value.trim();
 
@@ -298,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      submitBtn.disabled    = true;
+      submitBtn.disabled = true;
       submitBtn.textContent = '⏳ Envoi en cours…';
       showStatus(statusDiv, 'Enregistrement de votre présence…', 'info');
 
@@ -310,14 +352,14 @@ document.addEventListener('DOMContentLoaded', function () {
       var fields = {};
 
       // Section séance (données de l'enseignant transmises via QR)
-      if (e.c  && session.c)  fields[e.c]  = session.c;
-      if (e.t  && session.t)  fields[e.t]  = session.t;
-      if (e.d  && session.d)  fields[e.d]  = session.d;
+      if (e.c && session.c) fields[e.c] = session.c;
+      if (e.t && session.t) fields[e.t] = session.t;
+      if (e.d && session.d) fields[e.d] = session.d;
       if (e.tm && session.tm) fields[e.tm] = session.tm;
-      if (e.s  && session.s)  fields[e.s]  = session.s;
+      if (e.s && session.s) fields[e.s] = session.s;
 
       // Section étudiant (saisie directe)
-      if (e.n)  fields[e.n]  = lastName;
+      if (e.n) fields[e.n] = lastName;
       if (e.fn) fields[e.fn] = firstName;
       if (e.id) fields[e.id] = studentId;
 
@@ -330,7 +372,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(function (err) {
           console.error('[Form] Erreur soumission :', err);
-          submitBtn.disabled    = false;
+          submitBtn.disabled = false;
           submitBtn.textContent = '✅ Valider ma présence';
           showStatus(statusDiv, '❌ Erreur réseau. Vérifiez votre connexion et réessayez.', 'error');
         });
@@ -341,9 +383,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // MODE C — Confirmation finale
   // ============================================================
   function showConfirmation(session, lastName, firstName, studentId) {
-    document.getElementById('formSection').style.display    = 'none';
+    document.getElementById('formSection').style.display = 'none';
     document.getElementById('confirmSection').style.display = 'block';
-    document.getElementById('pageSubtitle').textContent     = 'Présence validée';
+    document.getElementById('pageSubtitle').textContent = 'Présence validée';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     document.getElementById('confirmText').innerHTML =
@@ -372,9 +414,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function showStatus(el, msg, type) {
     var s = {
-      info:  'background:#d1ecf1;border:1px solid #bee5eb;color:#0c5460;',
+      info: 'background:#d1ecf1;border:1px solid #bee5eb;color:#0c5460;',
       error: 'background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;',
-      ok:    'background:#d4edda;border:1px solid #c3e6cb;color:#155724;'
+      ok: 'background:#d4edda;border:1px solid #c3e6cb;color:#155724;'
     };
     el.style.cssText = 'display:block;padding:12px;border-radius:8px;margin-top:15px;' + (s[type] || s.info);
     el.innerHTML = msg;
