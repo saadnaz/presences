@@ -45,6 +45,10 @@
        CONTENU PRINCIPAL
        ============================================================ -->
   <div class="container page-container">
+    <div class="logo-header">
+      <img src="images/logo-supnum.png" alt="SupNum" class="logo-supnum">
+      <img src="images/logo-dclic.png"  alt="D-CLIC — Formez-vous au numérique" class="logo-dclic">
+    </div>
     <a href="index.html" class="back-link">← Retour à l'accueil</a>
     <header class="page-title">
       <h1>👨‍🏫 Interface Enseignant</h1>
@@ -72,7 +76,40 @@
         <form id="sessionForm">
           <div class="form-group">
             <label for="course">Matière / Cours *</label>
-            <input type="text" id="course" placeholder="Ex : Mathématiques Avancées" required>
+            <select id="course" required>
+              <option value="">— Sélectionnez une matière —</option>
+
+              <optgroup label="📌 Formation WEB">
+                <option>HTML</option>
+                <option>CSS</option>
+                <option>JavaScript</option>
+                <option>PHP</option>
+                <option>PHP et Base de données</option>
+                <option>Mini-Projet en PHP</option>
+                <option>Introduction au WordPress</option>
+                <option>Personnalisation avec WordPress</option>
+                <option>Projet Web Final</option>
+              </optgroup>
+
+              <optgroup label="🎨 Formation Design">
+                <option>Introduction au UX/UI</option>
+                <option>Conception UX/UI avec Figma</option>
+                <option>Modelisation 2D/3D</option>
+                <option>Communication Digitale avec Canva</option>
+                <option>Création et production de contenus multimédias avec Adobe</option>
+                <option>Production de contenus audiovisuels</option>
+              </optgroup>
+
+              <optgroup label="🔌 Fibre Optique">
+                <option>Réseaux IP</option>
+                <option>Les Supports de Transmission</option>
+                <option>Transmission par Faisceaux Hertziens</option>
+                <option>Transmission par Fibre Optique et Technologies WDM</option>
+                <option>Transmission VSAT</option>
+                <option>Technologies d'Accès Haut Débit (ADSL/VDSL/VDSL2+)</option>
+                <option>Technologies d'Accès Très Haut Débit (FTTX/GPON)</option>
+              </optgroup>
+            </select>
           </div>
           <div class="form-group">
             <label for="teacher">Nom de l'enseignant *</label>

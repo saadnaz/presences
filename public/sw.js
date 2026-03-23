@@ -1,4 +1,4 @@
-const CACHE_NAME = 'presence-v8';
+const CACHE_NAME = 'presence-v9';
 
 // Obtenir les URLs à mettre en cache dynamiquement selon le scope (compatible GitHub Pages)
 function getUrlsToCache(scope) {
@@ -16,6 +16,8 @@ function getUrlsToCache(scope) {
     scope + 'js/settings.js',
     scope + 'manifest.json',
     scope + 'mapping-id.json',
+    scope + 'images/logo-supnum.png',
+    scope + 'images/logo-dclic.png',
     'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
     'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js'
   ];
