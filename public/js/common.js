@@ -38,7 +38,8 @@ function createProfile(name, pin = '') {
     fieldSession: 'entry.3333333333',
     fieldStudentName: 'entry.2222222222',
     fieldStudentFirstName: 'entry.1111111111',
-    fieldStudentId: 'entry.6666666666'
+    fieldStudentId: 'entry.6666666666',
+    fieldStudentGender: 'entry.7777777777'
   };
   saveProfileSettings(id, defaultSettings);
   return id;

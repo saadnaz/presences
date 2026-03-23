@@ -311,6 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('studentLastName').value = '';
     document.getElementById('studentFirstName').value = '';
     document.getElementById('studentId').value = '';
+    document.getElementById('studentGender').value = '';
 
     // Mettre le focus sur le premier champ
     setTimeout(function () {
@@ -331,11 +332,12 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
 
-      var lastName = document.getElementById('studentLastName').value.trim();
+      var lastName  = document.getElementById('studentLastName').value.trim();
       var firstName = document.getElementById('studentFirstName').value.trim();
       var studentId = document.getElementById('studentId').value.trim();
+      var gender    = document.getElementById('studentGender').value.trim();
 
-      if (!lastName || !firstName || !studentId) {
+      if (!lastName || !firstName || !studentId || !gender) {
         showStatus(statusDiv, '⚠️ Veuillez remplir tous les champs.', 'error');
         return;
       }
@@ -359,9 +361,10 @@ document.addEventListener('DOMContentLoaded', function () {
       if (e.s && session.s) fields[e.s] = session.s;
 
       // Section étudiant (saisie directe)
-      if (e.n) fields[e.n] = lastName;
+      if (e.n)  fields[e.n]  = lastName;
       if (e.fn) fields[e.fn] = firstName;
       if (e.id) fields[e.id] = studentId;
+      if (e.g)  fields[e.g]  = gender;
 
       console.log('[Form] Soumission :', Object.keys(fields).length, 'champ(s)');
 

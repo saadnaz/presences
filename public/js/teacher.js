@@ -65,14 +65,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Vérifier que les IDs des champs étudiant sont configurés (pas des placeholders)
     const defaultIds = [
-      'entry.2222222222', 'entry.1111111111', 'entry.6666666666',
+      'entry.2222222222', 'entry.1111111111', 'entry.6666666666', 'entry.7777777777',
       'entry.1234567890', 'entry.9876543210', 'entry.5555555555',
       'entry.4444444444', 'entry.3333333333'
     ];
     const studentFields = [
       { key: 'fieldStudentName',      label: 'Nom étudiant' },
       { key: 'fieldStudentFirstName', label: 'Prénom étudiant' },
-      { key: 'fieldStudentId',        label: 'Numéro étudiant' }
+      { key: 'fieldStudentId',        label: 'Numéro étudiant' },
+      { key: 'fieldStudentGender',    label: 'Genre' }
     ];
     const unconfigured = studentFields.filter(f =>
       !s[f.key] || defaultIds.includes(s[f.key])
@@ -219,7 +220,8 @@ document.addEventListener('DOMContentLoaded', function () {
         s:  settings.fieldSession,
         n:  settings.fieldStudentName,
         fn: settings.fieldStudentFirstName,
-        id: settings.fieldStudentId
+        id: settings.fieldStudentId,
+        g:  settings.fieldStudentGender
       }
     });
 

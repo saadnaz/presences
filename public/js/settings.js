@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const fieldStudentNameInput = document.getElementById('fieldStudentName');
   const fieldStudentFirstNameInput = document.getElementById('fieldStudentFirstName');
   const fieldStudentIdInput = document.getElementById('fieldStudentId');
+  const fieldStudentGenderInput = document.getElementById('fieldStudentGender');
   const resetBtn = document.getElementById('resetBtn');
   const testBtn = document.getElementById('testBtn');
   const testOutput = document.getElementById('testOutput');
@@ -33,7 +34,8 @@ document.addEventListener('DOMContentLoaded', function () {
     FIELD_SESSION: 'entry.3333333333',
     FIELD_STUDENT_NAME: 'entry.2222222222',
     FIELD_STUDENT_FIRST_NAME: 'entry.1111111111',
-    FIELD_STUDENT_ID: 'entry.6666666666'
+    FIELD_STUDENT_ID: 'entry.6666666666',
+    FIELD_STUDENT_GENDER: 'entry.7777777777'
   };
 
   // Définition des champs (label + input correspondant)
@@ -45,7 +47,8 @@ document.addEventListener('DOMContentLoaded', function () {
     { key: 'session',          label: 'ID de session',        input: () => fieldSessionInput },
     { key: 'studentName',      label: 'Nom étudiant',         input: () => fieldStudentNameInput },
     { key: 'studentFirstName', label: 'Prénom étudiant',      input: () => fieldStudentFirstNameInput },
-    { key: 'studentId',        label: 'N° étudiant',          input: () => fieldStudentIdInput }
+    { key: 'studentId',        label: 'N° étudiant',          input: () => fieldStudentIdInput },
+    { key: 'studentGender',    label: 'Genre',                input: () => fieldStudentGenderInput }
   ];
 
   let currentProfileId = null;
@@ -97,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fieldStudentNameInput.value = settings.fieldStudentName || DEFAULT_VALUES.FIELD_STUDENT_NAME;
     fieldStudentFirstNameInput.value = settings.fieldStudentFirstName || DEFAULT_VALUES.FIELD_STUDENT_FIRST_NAME;
     fieldStudentIdInput.value = settings.fieldStudentId || DEFAULT_VALUES.FIELD_STUDENT_ID;
+    if (fieldStudentGenderInput) fieldStudentGenderInput.value = settings.fieldStudentGender || DEFAULT_VALUES.FIELD_STUDENT_GENDER;
   }
 
   function resetFormToDefaults() {
@@ -110,6 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fieldStudentNameInput.value = DEFAULT_VALUES.FIELD_STUDENT_NAME;
     fieldStudentFirstNameInput.value = DEFAULT_VALUES.FIELD_STUDENT_FIRST_NAME;
     fieldStudentIdInput.value = DEFAULT_VALUES.FIELD_STUDENT_ID;
+    if (fieldStudentGenderInput) fieldStudentGenderInput.value = DEFAULT_VALUES.FIELD_STUDENT_GENDER;
   }
 
   function saveSettings() {
@@ -127,7 +132,8 @@ document.addEventListener('DOMContentLoaded', function () {
       fieldSession: fieldSessionInput.value.trim(),
       fieldStudentName: fieldStudentNameInput.value.trim(),
       fieldStudentFirstName: fieldStudentFirstNameInput.value.trim(),
-      fieldStudentId: fieldStudentIdInput.value.trim()
+      fieldStudentId: fieldStudentIdInput.value.trim(),
+      fieldStudentGender: fieldStudentGenderInput ? fieldStudentGenderInput.value.trim() : ''
     };
     ProfileManager.saveProfileSettings(currentProfileId, settings);
     alert('Configuration enregistrée pour le profil !');
@@ -295,7 +301,8 @@ document.addEventListener('DOMContentLoaded', function () {
       fieldTeacher:          ['enseignant', 'teacher', 'prof', 'formateur'],
       fieldDate:             ['date'],
       fieldTime:             ['heure', 'time', 'horaire'],
-      fieldSession:          ['session', 'séance', 'seance', 'id session', 'session id']
+      fieldSession:          ['session', 'séance', 'seance', 'id session', 'session id'],
+      fieldStudentGender:    ['genre', 'gender', 'sexe']
     };
 
     const assigned = {};
@@ -323,7 +330,8 @@ document.addEventListener('DOMContentLoaded', function () {
       fieldSession:          fieldSessionInput,
       fieldStudentName:      fieldStudentNameInput,
       fieldStudentFirstName: fieldStudentFirstNameInput,
-      fieldStudentId:        fieldStudentIdInput
+      fieldStudentId:        fieldStudentIdInput,
+      fieldStudentGender:    fieldStudentGenderInput
     };
     Object.entries(assigned).forEach(([fieldKey, entryId]) => {
       if (fieldInputs[fieldKey] && entryId) {
