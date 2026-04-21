@@ -19,19 +19,16 @@
     <a href="index.html" class="back-link">← Retour à l'accueil</a>
     <header class="page-title">
       <h1>⚙️ Paramètres</h1>
-      <p>Configurez votre intégration Google Forms et Google Sheets</p>
+      <p>Liez votre profil au formulaire Google Forms officiel en un seul clic.</p>
     </header>
 
     <main>
       <div class="section">
-        <h2>Configuration du formulaire Google Forms</h2>
-        <p>Pour que l'application fonctionne, vous devez créer un formulaire Google Forms et indiquer ci‑dessous son URL
-          de base ainsi que les IDs des champs. <a href="docs/google-setup.md" target="_blank">Guide détaillé</a>.</p>
+        <h2>Profil enseignant</h2>
+        <p>Choisissez un profil enseignant ou créez-en un nouveau. Chaque profil peut être lié au formulaire officiel.</p>
 
         <div class="profile-selector-section"
           style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
-          <h3>Profil enseignant</h3>
-          <p>Choisissez un profil pour gérer ses paramètres spécifiques.</p>
           <div class="form-group">
             <label for="profileSelect">Profil actuel :</label>
             <select id="profileSelect" class="form-control">
@@ -43,193 +40,49 @@
             </div>
           </div>
         </div>
-
-        <form id="settingsForm">
-          <div class="form-group">
-            <label for="baseUrl">URL de base du formulaire</label>
-            <input type="url" id="baseUrl" placeholder="https://docs.google.com/forms/d/e/XXXXXXXXXXXXXXX/viewform"
-              required>
-              <small>L'URL complète de votre formulaire Google Forms (sans paramètres).</small>
-          </div>
-
-          <!-- ================================================================
-               Reconnexion Google Sheets (si le sheet a été effacé ou déconnecté)
-               ================================================================ -->
-          <div style="margin: 0 0 25px; padding: 18px; background: #fce4ec; border: 2px solid #e91e63; border-radius: 10px;">
-            <h4 style="color: #880e4f; margin-bottom: 8px;">⚠️ Sheet déconnecté ou formulaire retravaillé ?</h4>
-            <p style="color: #555; font-size: 0.9rem; margin-bottom: 8px;">
-              Si vous avez <strong>effacé ou supprimé le Google Sheet</strong>, ou <strong>retravaillé votre formulaire</strong>, il faut :
-            </p>
-            <ol style="color: #555; font-size: 0.9rem; padding-left: 20px; margin: 0 0 8px;">
-              <li>Dans Google Forms → onglet <strong>Réponses</strong> → cliquer l'icône verte Sheets → <em>Créer une nouvelle feuille</em></li>
-              <li>Re-extraire les IDs des champs avec le bookmarklet ci-dessous (les IDs changent si le formulaire a été modifié)</li>
-              <li>Re-enregistrer la configuration ici</li>
-            </ol>
-          </div>
-
-          <!-- Nombre de sections du formulaire -->
-          <div class="form-group">
-            <label for="formSections">Nombre de sections du formulaire Google</label>
-            <select id="formSections" class="form-control" style="max-width:120px;">
-              <option value="1">1 section</option>
-              <option value="2">2 sections</option>
-              <option value="3">3 sections</option>
-              <option value="4">4 sections</option>
-            </select>
-            <small style="display:block; margin-top:4px; color:#e65100;">
-              ⚠️ Si votre formulaire a plusieurs sections/pages (ex. : section 1 = séance, section 2 = étudiant),
-              sélectionnez le bon nombre. Sans ça, les champs des sections 2+ ne seront <strong>pas enregistrés</strong> dans Google Sheets.
-            </small>
-          </div>
-
-          <!-- ================================================================
-               Section Bookmarklet — méthode fiable pour extraire les entry IDs
-               ================================================================ -->
-          <div style="margin: 0 0 25px; padding: 18px; background: #fff8e1; border: 2px solid #FFC107; border-radius: 10px;">
-            <h4 style="color: #e65100; margin-bottom: 10px;">🔖 Étape 1 — Installer le bookmarklet</h4>
-
-            <!-- === SUR ORDINATEUR === -->
-            <div style="background:white; border-radius:8px; padding:14px; margin-bottom:12px; border:1px solid #ffe082;">
-              <p style="font-weight:bold; color:#555; margin-bottom:10px; font-size:0.9rem;">🖥️ Sur ordinateur (Chrome / Firefox / Edge)</p>
-              <p style="margin-bottom:10px; color:#555; font-size:0.9rem;">
-                Affichez la barre de favoris (<kbd>Ctrl+Shift+B</kbd>), puis <strong>faites glisser</strong> ce bouton dedans :
-              </p>
-              <a id="bookmarkletLink"
-                href="javascript:(function(){var d=window.FB_PUBLIC_LOAD_DATA_;if(!d){alert('Erreur: ouvrez d\'abord votre formulaire Google Forms dans cet onglet (page /viewform).');return;}var q=d&&d[1]&&d[1][1];if(!Array.isArray(q)){alert('Structure non reconnue. Rafraîchissez la page du formulaire.');return;}var fields=[];var sections=1;q.forEach(function(f){if(!Array.isArray(f))return;if(f[3]===8||f[3]===11){sections++;return;}var label=(f[1]&&typeof f[1]==='string')?f[1].trim():'(sans titre)';if(Array.isArray(f[4])){f[4].forEach(function(s){if(Array.isArray(s)&&typeof s[0]==='number')fields.push(label+' : entry.'+s[0]);});}});if(!fields.length){alert('Aucun champ trouvé. Assurez-vous d\'avoir ouvert la page /viewform du formulaire.');return;}var out=fields.join('\n');out+='\n\nSECTIONS:'+sections;prompt('Copiez tout (Ctrl+A puis Ctrl+C) — '+fields.length+' champ(s), '+sections+' section(s) :',out);})();"
-                style="display:inline-block; padding:10px 20px; background:#FF9800; color:white; border-radius:8px; font-weight:bold; text-decoration:none; cursor:grab; border:2px dashed #e65100;"
-                title="Faites glisser ce bouton dans la barre de favoris">
-                📋 Extraire les IDs du formulaire
-              </a>
-            </div>
-
-            <!-- === SUR MOBILE === -->
-            <div style="background:white; border-radius:8px; padding:14px; border:1px solid #ffe082;">
-              <p style="font-weight:bold; color:#555; margin-bottom:10px; font-size:0.9rem;">📱 Sur mobile (iOS Safari / Android Chrome)</p>
-              <p style="color:#555; font-size:0.9rem; margin-bottom:10px;">
-                Le glisser-déposer n'est pas possible. Procédez ainsi :
-              </p>
-              <ol style="color:#555; font-size:0.9rem; padding-left:20px; margin-bottom:12px; line-height:1.9;">
-                <li>Cliquez sur <strong>Copier le code</strong> ci-dessous</li>
-                <li>Mettez <strong>n'importe quelle page</strong> en favori (via le menu du navigateur)</li>
-                <li><strong>Modifiez ce favori</strong> (appui long → Modifier) et remplacez l'URL par le code copié</li>
-                <li>Renommez-le <em>"Extraire IDs"</em> pour le retrouver facilement</li>
-              </ol>
-              <button type="button" id="copyBookmarkletBtn"
-                style="padding:10px 18px; background:#6c757d; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.9rem; cursor:pointer;">
-                📋 Copier le code du bookmarklet
-              </button>
-              <span id="copyBookmarkletMsg" style="display:none; margin-left:10px; color:#2e7d32; font-size:0.85rem; font-weight:bold;">✅ Copié !</span>
-            </div>
-
-            <p style="margin-top: 12px; color: #777; font-size: 0.85rem;">
-              <strong>Étape 2</strong> — Ouvrez votre formulaire Google Forms dans un onglet (page <code>/viewform</code>).<br>
-              <strong>Étape 3</strong> — Cliquez sur le favori. Une fenêtre affiche les champs et leur ID, <em>avec le nombre de sections</em>.<br>
-              <strong>Étape 4</strong> — Copiez tout (Ctrl+A, Ctrl+C) et collez ci-dessous. L'import détectera automatiquement les champs.
-            </p>
-          </div>
-
-          <!-- Zone de collage des IDs copiés depuis le bookmarklet -->
-          <div style="margin: 0 0 25px; padding: 18px; background: #e3f2fd; border: 2px solid #2196F3; border-radius: 10px;">
-            <h4 style="color: #1565c0; margin-bottom: 10px;">📥 Étape 4 — Collez le résultat du bookmarklet ici</h4>
-            <div class="form-group" style="margin-bottom:10px;">
-              <textarea id="pasteIds" rows="5"
-                style="width:100%; padding:10px; border:1px solid #90caf9; border-radius:6px; font-family:monospace; font-size:0.9rem; resize:vertical;"
-                placeholder="Exemple de résultat attendu :&#10;Matière : entry.123456789&#10;Enseignant : entry.987654321&#10;Nom étudiant : entry.555444333&#10;...&#10;SECTIONS:2"></textarea>
-            </div>
-            <button type="button" id="importIdsBtn" class="btn btn-secondary">Importer et assigner les IDs →</button>
-          </div>
-
-          <!-- ================================================================
-               Chargement automatique depuis mapping-id.json
-               ================================================================ -->
-          <div style="margin: 0 0 25px; padding: 18px; background: #f3e5f5; border: 2px solid #9c27b0; border-radius: 10px;">
-            <h4 style="color: #6a1b9a; margin-bottom: 8px;">📂 Charger depuis le fichier de mapping</h4>
-            <p style="color: #555; font-size: 0.9rem; margin-bottom: 12px;">
-              Si vous avez un fichier <strong>mapping-id.json</strong> dans le dossier <code>public/</code> de l'application,
-              cliquez ci-dessous pour charger automatiquement l'URL, le nombre de sections et tous les IDs de champs.
-            </p>
-            <button type="button" id="loadMappingFileBtn"
-              style="padding:10px 20px; background:#9c27b0; color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.95rem; cursor:pointer;">
-              📂 Charger mapping-id.json
-            </button>
-            <span id="loadMappingFileMsg" style="display:none; margin-left:12px; font-size:0.85rem; font-weight:bold;"></span>
-          </div>
-
-          <!-- Panneau de mapping affiché après import des IDs -->
-          <div id="detectPanel" class="hidden"
-            style="margin: 0 0 25px; padding: 20px; background: #e8f5e9; border: 2px solid #4CAF50; border-radius: 10px;">
-            <h4 style="color: #2e7d32; margin-bottom: 8px;">🔍 IDs importés — Assignez-les aux champs</h4>
-            <p id="detectInfo" style="margin-bottom: 15px; color: #388e3c; font-weight: bold;"></p>
-            <p style="margin-bottom: 15px; color: #555; font-size: 0.9rem;">
-              Vérifiez les associations ci-dessous. Corrigez les sélections si l'ordre ne correspond pas à votre
-              formulaire, puis cliquez sur <strong>Appliquer</strong>.
-            </p>
-            <div id="detectMappings"></div>
-            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-              <button type="button" id="applyMappingBtn" class="btn btn-primary">✅ Appliquer cette configuration</button>
-              <button type="button" id="cancelMappingBtn" class="btn btn-secondary">Annuler</button>
-            </div>
-          </div>
-
-          <h3>IDs des champs (entry.xxxxxxx)</h3>
-          <div class="form-group">
-            <label for="fieldCourse">Matière</label>
-            <input type="text" id="fieldCourse" placeholder="entry.1234567890" required>
-          </div>
-          <div class="form-group">
-            <label for="fieldTeacher">Enseignant</label>
-            <input type="text" id="fieldTeacher" placeholder="entry.9876543210" required>
-          </div>
-          <div class="form-group">
-            <label for="fieldDate">Date</label>
-            <input type="text" id="fieldDate" placeholder="entry.5555555555" required>
-          </div>
-          <div class="form-group">
-            <label for="fieldTime">Heure</label>
-            <input type="text" id="fieldTime" placeholder="entry.4444444444" required>
-          </div>
-          <div class="form-group">
-            <label for="fieldSession">ID de session</label>
-            <input type="text" id="fieldSession" placeholder="entry.3333333333" required>
-          </div>
-          <div class="form-group">
-            <label for="fieldStudentName">Nom de l'étudiant</label>
-            <input type="text" id="fieldStudentName" placeholder="entry.2222222222" required>
-          </div>
-          <div class="form-group">
-            <label for="fieldStudentFirstName">Prénom de l'étudiant</label>
-            <input type="text" id="fieldStudentFirstName" placeholder="entry.1111111111" required>
-          </div>
-          <div class="form-group">
-            <label for="fieldStudentId">Numéro d'étudiant</label>
-            <input type="text" id="fieldStudentId" placeholder="entry.6666666666" required>
-          </div>
-          <div class="form-group">
-            <label for="fieldStudentGender">Genre (Homme / Femme)</label>
-            <input type="text" id="fieldStudentGender" placeholder="entry.7777777777" required>
-          </div>
-
-          <div class="button-group">
-            <button type="submit" class="btn btn-primary">Enregistrer la configuration</button>
-            <button type="button" id="resetBtn" class="btn btn-secondary">Restaurer les valeurs par défaut</button>
-          </div>
-        </form>
       </div>
 
       <div class="section">
-        <h2>Compte Google administrateur</h2>
-        <p>Les données seront stockées dans le Google Sheets lié à votre formulaire. Assurez‑vous que le formulaire a
-          été créé avec le compte Google que vous souhaitez utiliser comme administrateur.</p>
-        <p><strong>Note :</strong> L'application ne stocke pas vos identifiants Google. Seul le formulaire Google Forms
-          est utilisé pour collecter les soumissions.</p>
-        <p>Pour changer de compte administrateur, créez un nouveau formulaire avec le compte souhaité et mettez à jour
-          les paramètres ci‑dessus.</p>
+        <h2>Formulaire Google Forms</h2>
+        <p>L'URL du formulaire officiel est définie dans la configuration de l'application. Cliquez simplement sur le
+          bouton ci-dessous pour lier ce profil au formulaire — les champs seront configurés automatiquement.</p>
+
+        <!-- ================================================================
+             URL du formulaire (lecture seule, chargée depuis mapping-id.json)
+             ================================================================ -->
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label for="baseUrlDisplay">URL du formulaire Google Forms</label>
+          <input type="url" id="baseUrlDisplay" readonly
+            style="background-color:#f5f5f5; cursor:not-allowed; color:#555;"
+            placeholder="Chargement de l'URL depuis la configuration...">
+          <small style="display:block; margin-top:4px; color:#777;">
+            🔒 En lecture seule — valeur issue du fichier de configuration <code>mapping-id.json</code>.
+          </small>
+        </div>
+
+        <!-- ================================================================
+             Statut de liaison du profil courant
+             ================================================================ -->
+        <div id="bindStatus"
+          style="margin: 0 0 20px; padding: 14px 18px; border-radius: 10px; font-size: 0.95rem; display:none;">
+        </div>
+
+        <!-- ================================================================
+             Bouton unique : Lier au formulaire Google
+             ================================================================ -->
+        <div class="button-group" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <button type="button" id="bindFormBtn" class="btn btn-primary"
+            style="font-size:1.05rem; padding:12px 24px;">
+            🔗 Lier à Google Form
+          </button>
+          <button type="button" id="resetBtn" class="btn btn-secondary">Délier ce profil</button>
+        </div>
       </div>
 
       <div class="section">
         <h2>Vérification</h2>
-        <p>Une fois la configuration enregistrée, vous pouvez tester la génération d'un QR code dans l'<a
-            href="teacher.html">interface enseignant</a>.</p>
+        <p>Une fois le profil lié, vous pouvez tester la génération d'un QR code dans l'<a
+            href="teacher.html">interface enseignant</a>, ou générer une URL de test ici.</p>
         <button id="testBtn" class="btn btn-secondary">Tester la génération d'URL</button>
         <div id="testOutput" class="hidden"
           style="margin-top: 20px; padding: 15px; background: #f1f8e9; border-radius: 8px;">
