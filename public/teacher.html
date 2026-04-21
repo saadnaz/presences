@@ -16,8 +16,7 @@
   <!-- ============================================================
        MODAL PIN — affiché si le profil actif a un code PIN
        ============================================================ -->
-  <div id="pinModal"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  <div id="pinModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
            background:rgba(0,0,0,0.75); align-items:center; justify-content:center; z-index:9999;">
     <div style="background:white; border-radius:15px; padding:40px 30px; text-align:center;
                 max-width:340px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
@@ -26,11 +25,9 @@
       <p style="color:#777; margin-bottom:20px; font-size:0.95rem;">
         Ce profil est protégé par un code PIN.
       </p>
-      <input type="password" id="pinInput" placeholder="Entrez votre PIN" maxlength="12"
-        style="width:100%; padding:14px; font-size:1.3rem; text-align:center;
+      <input type="password" id="pinInput" placeholder="Entrez votre PIN" maxlength="12" style="width:100%; padding:14px; font-size:1.3rem; text-align:center;
                border:2px solid #ccc; border-radius:8px; margin-bottom:10px;
-               letter-spacing:0.4em; outline:none;"
-        autocomplete="current-password">
+               letter-spacing:0.4em; outline:none;" autocomplete="current-password">
       <p id="pinError" style="display:none; color:#e53935; margin-bottom:10px; font-size:0.9rem;">
         ❌ Code PIN incorrect. Réessayez.
       </p>
@@ -47,7 +44,7 @@
   <div class="container page-container">
     <div class="logo-header">
       <img src="images/logo-supnum.png" alt="SupNum" class="logo-supnum">
-      <img src="images/logo-dclic.png"  alt="D-CLIC — Formez-vous au numérique" class="logo-dclic">
+      <img src="images/logo-dclic.png" alt="D-CLIC — Formez-vous au numérique" class="logo-dclic">
     </div>
     <a href="index.html" class="back-link">← Retour à l'accueil</a>
     <header class="page-title">
@@ -65,7 +62,8 @@
         </div>
         <div id="profileStatusLine" style="margin-top:10px; font-size:0.9rem; color:#555;"></div>
         <div style="margin-top:10px;">
-          <button type="button" id="manageProfileBtn" class="btn btn-secondary" style="font-size:0.9rem; padding:8px 16px;">
+          <button type="button" id="manageProfileBtn" class="btn btn-secondary"
+            style="font-size:0.9rem; padding:8px 16px;">
             ⚙️ Gérer et synchroniser le profil
           </button>
         </div>
@@ -74,8 +72,7 @@
       <!-- ============================================================
            MODAL — gérer et synchroniser un profil
            ============================================================ -->
-      <div id="profileModal"
-        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+      <div id="profileModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
                background:rgba(0,0,0,0.6); align-items:center; justify-content:center;
                z-index:9998; padding:20px; overflow-y:auto;">
         <div style="background:white; border-radius:15px; padding:28px 26px;
@@ -105,14 +102,12 @@
           </div>
 
           <!-- Badge de statut -->
-          <div id="modalBindStatus"
-            style="margin:0 0 16px; padding:10px 14px; border-radius:8px;
+          <div id="modalBindStatus" style="margin:0 0 16px; padding:10px 14px; border-radius:8px;
                    font-size:0.9rem; font-weight:bold; display:none;"></div>
 
           <!-- Actions principales -->
           <div style="display:flex; flex-direction:column; gap:8px;">
-            <button type="button" id="modalSyncBtn" class="btn btn-primary"
-              style="font-size:1rem; padding:12px;">
+            <button type="button" id="modalSyncBtn" class="btn btn-primary" style="font-size:1rem; padding:12px;">
               🔄 Synchroniser ce profil avec Google Form
             </button>
             <button type="button" id="modalNewProfileBtn" class="btn btn-secondary"
@@ -166,6 +161,9 @@
                 <option>Technologies d'Accès Haut Débit (ADSL/VDSL/VDSL2+)</option>
                 <option>Technologies d'Accès Très Haut Débit (FTTX/GPON)</option>
               </optgroup>
+              <optgroup label="Insertion Pro">
+                <option>Entrepreneuriat</option>
+              </optgroup>
             </select>
           </div>
           <div class="form-group">
@@ -197,8 +195,7 @@
         <p>Affichez ce QR code aux étudiants. Ils scannent et remplissent leurs informations dans l'application.</p>
 
         <!-- Résumé de la séance -->
-        <div id="sessionSummary"
-          style="display:flex; flex-wrap:wrap; gap:10px; margin:15px 0; padding:15px;
+        <div id="sessionSummary" style="display:flex; flex-wrap:wrap; gap:10px; margin:15px 0; padding:15px;
                  background:#f1f8e9; border-radius:10px; border-left:4px solid #4CAF50;">
         </div>
 
