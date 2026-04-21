@@ -63,10 +63,67 @@
           <label for="profileSelectTeacher">Profil actif :</label>
           <select id="profileSelectTeacher" class="form-control"></select>
         </div>
+        <div id="profileStatusLine" style="margin-top:10px; font-size:0.9rem; color:#555;"></div>
         <div style="margin-top:10px;">
-          <a href="settings.html" class="btn btn-secondary" style="font-size:0.9rem; padding:8px 16px;">
-            ⚙️ Gérer les profils
-          </a>
+          <button type="button" id="manageProfileBtn" class="btn btn-secondary" style="font-size:0.9rem; padding:8px 16px;">
+            ⚙️ Gérer et synchroniser le profil
+          </button>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           MODAL — gérer et synchroniser un profil
+           ============================================================ -->
+      <div id="profileModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+               background:rgba(0,0,0,0.6); align-items:center; justify-content:center;
+               z-index:9998; padding:20px; overflow-y:auto;">
+        <div style="background:white; border-radius:15px; padding:28px 26px;
+                    max-width:520px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <h2 style="color:#2c3e50; margin:0;">⚙️ Gérer et synchroniser</h2>
+            <button type="button" id="profileModalCloseBtn"
+              style="background:none; border:none; font-size:1.6rem; color:#999; cursor:pointer; line-height:1;">×</button>
+          </div>
+          <p style="color:#777; font-size:0.92rem; margin-bottom:18px;">
+            Créez ou sélectionnez votre profil enseignant. La synchronisation avec Google Forms
+            est automatique — aucune configuration manuelle n'est nécessaire.
+          </p>
+
+          <!-- URL officielle (lecture seule, issue de mapping-id.json) -->
+          <div class="form-group" style="margin-bottom:16px;">
+            <label for="modalFormUrl" style="font-size:0.9rem;">Formulaire officiel :</label>
+            <input type="url" id="modalFormUrl" readonly
+              style="background-color:#f5f5f5; cursor:not-allowed; color:#555; font-size:0.82rem;"
+              placeholder="Chargement…">
+          </div>
+
+          <!-- Sélecteur de profil dans la modale -->
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="modalProfileSelect" style="font-size:0.9rem;">Profil actif :</label>
+            <select id="modalProfileSelect" class="form-control"></select>
+          </div>
+
+          <!-- Badge de statut -->
+          <div id="modalBindStatus"
+            style="margin:0 0 16px; padding:10px 14px; border-radius:8px;
+                   font-size:0.9rem; font-weight:bold; display:none;"></div>
+
+          <!-- Actions principales -->
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button type="button" id="modalSyncBtn" class="btn btn-primary"
+              style="font-size:1rem; padding:12px;">
+              🔄 Synchroniser ce profil avec Google Form
+            </button>
+            <button type="button" id="modalNewProfileBtn" class="btn btn-secondary"
+              style="font-size:0.9rem; padding:10px;">
+              ➕ Créer un nouveau profil (synchronisé automatiquement)
+            </button>
+            <button type="button" id="modalDeleteProfileBtn" class="btn btn-danger"
+              style="font-size:0.85rem; padding:8px;">
+              🗑️ Supprimer ce profil
+            </button>
+          </div>
         </div>
       </div>
 
