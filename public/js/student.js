@@ -297,6 +297,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var items = [
       { icon: '📚', label: 'Cours', val: session.c },
       { icon: '👨‍🏫', label: 'Enseignant', val: session.t },
+      { icon: '🎯', label: 'Cohorte', val: session.co },
       { icon: '📅', label: 'Date', val: formatDate(session.d) },
       { icon: '⏰', label: 'Heure', val: session.tm }
     ];
@@ -354,11 +355,12 @@ document.addEventListener('DOMContentLoaded', function () {
       var fields = {};
 
       // Section séance (données de l'enseignant transmises via QR)
-      if (e.c && session.c) fields[e.c] = session.c;
-      if (e.t && session.t) fields[e.t] = session.t;
-      if (e.d && session.d) fields[e.d] = session.d;
+      if (e.c  && session.c)  fields[e.c]  = session.c;
+      if (e.t  && session.t)  fields[e.t]  = session.t;
+      if (e.co && session.co) fields[e.co] = session.co;
+      if (e.d  && session.d)  fields[e.d]  = session.d;
       if (e.tm && session.tm) fields[e.tm] = session.tm;
-      if (e.s && session.s) fields[e.s] = session.s;
+      if (e.s  && session.s)  fields[e.s]  = session.s;
 
       // Section étudiant (saisie directe)
       if (e.n)  fields[e.n]  = lastName;

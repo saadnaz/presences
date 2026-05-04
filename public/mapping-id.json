@@ -4,6 +4,7 @@
   "mapping": {
     "matiere": "entry.427007253",
     "enseignant": "entry.873769439",
+    "cohorte": "entry.1313360450",
     "date": "entry.296934241",
     "heure": "entry.1459757280",
     "id_session": "entry.427454552",

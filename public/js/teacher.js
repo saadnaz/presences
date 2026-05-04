@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
       formSections: officialMapping.sections || 1,
       fieldCourse:            m.matiere          || '',
       fieldTeacher:           m.enseignant       || '',
+      fieldCohort:            m.cohorte          || '',
       fieldDate:              m.date             || '',
       fieldTime:              m.heure            || '',
       fieldSession:           m.id_session       || '',
@@ -441,12 +442,14 @@ document.addEventListener('DOMContentLoaded', function () {
       ps: settings.formSections || 1,        // nombre de sections (pageHistory)
       c:  sessionData.course,
       t:  sessionData.teacher,
+      co: sessionData.cohorte,
       d:  sessionData.date,
       tm: sessionData.time,
       s:  sessionData.sessionId,
       e: {                                   // entry IDs des champs
         c:  settings.fieldCourse,
         t:  settings.fieldTeacher,
+        co: settings.fieldCohort,
         d:  settings.fieldDate,
         tm: settings.fieldTime,
         s:  settings.fieldSession,
@@ -499,6 +502,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const items = [
       { icon: '📚', label: 'Cours', value: sessionData.course },
       { icon: '👨‍🏫', label: 'Enseignant', value: sessionData.teacher },
+      { icon: '🎯', label: 'Cohorte', value: sessionData.cohorte },
       { icon: '📅', label: 'Date', value: sessionData.date },
       { icon: '⏰', label: 'Heure', value: sessionData.time },
       { icon: '🔑', label: 'Session ID', value: sessionData.sessionId }
@@ -522,10 +526,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const course = document.getElementById('course').value.trim();
     const teacher = document.getElementById('teacher').value.trim();
+    const cohorte = document.getElementById('cohorte').value;
     const date = document.getElementById('date').value;
     const time = document.getElementById('time').value;
 
-    if (!course || !teacher || !date || !time) {
+    if (!course || !teacher || !cohorte || !date || !time) {
       alert('Veuillez remplir tous les champs obligatoires.');
       return;
     }
@@ -533,6 +538,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const sessionData = {
       course,
       teacher,
+      cohorte,
       date,
       time,
       sessionId: generateSessionId()
